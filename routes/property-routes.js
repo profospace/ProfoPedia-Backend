@@ -2,6 +2,18 @@ const express = require('express');
 const router = express.Router();
 const propertyController = require('../controllers/property-controller');
 
+
+
+// Get all SRO codes present in the database
+router.get('/sro-codes', statsController.getSroCodes);
+
+// Get total number of property records
+router.get('/total-records', statsController.getTotalRecords);
+
+// Get overall database statistics
+router.get('/dashboard', statsController.getDatabaseStats);
+
+
 // Fetch property data from external API and store in database
 router.post('/property-data', propertyController.fetchPropertyData);
 
@@ -11,7 +23,10 @@ router.get('/property-records', propertyController.getPropertyRecords);
 // Get individual property record by ID
 router.get('/property-records/:id', propertyController.getPropertyRecordById);
 
-// Search property records
-router.post('/property-records/stats', propertyController.getDistrictStatistics);
+// District statistics
+router.get('/property-records/stats', propertyController.getDistrictStatistics);
+
+// Advanced search endpoint (new)
+router.post('/property-records/search', propertyController.searchPropertyRecords);
 
 module.exports = router;
