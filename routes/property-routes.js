@@ -5,13 +5,13 @@ const propertyController = require('../controllers/property-controller');
 
 
 // Get all SRO codes present in the database
-router.get('/sro-codes', statsController.getSroCodes);
+router.get('/sro-codes', propertyController.getSroCodes);
 
 // Get total number of property records
-router.get('/total-records', statsController.getTotalRecords);
+router.get('/total-records', propertyController.getTotalRecords);
 
 // Get overall database statistics
-router.get('/dashboard', statsController.getDatabaseStats);
+router.get('/dashboard', propertyController.getDatabaseStats);
 
 
 // Fetch property data from external API and store in database
