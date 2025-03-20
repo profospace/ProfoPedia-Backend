@@ -429,3 +429,67 @@ exports.searchPropertyRecords = async (req, res) => {
         });
     }
 };
+
+
+/**
+ * Get property records count grouped by GaonCode
+ */
+exports.getPropertyRecordsByGaonCode = async (req, res) => {
+    try {
+        // Optional filtering by district or SRO code
+        const { districtCode, sroCode } = req.query;
+        
+        // Build match stage for filtering
+        const matchStage = {};
+        if (districtCode) matchStage.districtCode = districtCode;
+        if (sroCode) matchStage.sroCode = sroCode;
+        
+        // Build pipeline
+        const pipeline = [];
+        
+        // Initial match on the parent document if filters are provided
+        if (Object.keys(matchStage).length > 0) {
+            pipeline.push({ $match: matchStage });
+        }
+        
+        // Group by gaonCode1
+        pipeline.push({
+            $group: {
+                _id: "$gaonCode1",
+                searchCount: { $sum: 1 },
+                recordCount: { $sum: "$recordCount" },
+                lastUpdated: { $max: "$updatedAt" }
+            }
+        });
+        
+        // Sort by record count descending
+        pipeline.push({
+            $sort: { recordCount: -1 }
+        });
+        
+        // Execute the aggregation
+        const results = await PropertyRecord.aggregate(pipeline);
+        
+        // Format the results
+        const formattedResults = results.map(item => ({
+            gaonCode: item._id,
+            searchCount: item.searchCount,
+            recordCount: item.recordCount,
+            lastUpdated: item.lastUpdated
+        }));
+        
+        return res.status(200).json({
+            success: true,
+            count: formattedResults.length,
+            data: formattedResults
+        });
+        
+    } catch (error) {
+        console.error('Error fetching property records by GaonCode:', error);
+        return res.status(500).json({
+            success: false,
+            message: `An error occurred: ${error.message}`
+        });
+    }
+};
+
