@@ -12,7 +12,7 @@ router.get('/total-records', propertyController.getTotalRecords);
 
 // Get overall database statistics
 router.get('/dashboard', propertyController.getDatabaseStats);
-router.get('/gaon-distribution', statsController.getPropertyRecordsByGaonCode);
+router.get('/gaon-distribution', propertyController.getPropertyRecordsByGaonCode);
 
 
 // Fetch property data from external API and store in database
