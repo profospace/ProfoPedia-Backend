@@ -209,6 +209,8 @@ exports.getDistrictStatistics = async (req, res) => {
  */
 exports.getSroCodes = async (req, res) => {
     try {
+        console.log(`Making request to getSroCodes :::: `);
+
         const sroCodes = await PropertyRecord.distinct('sroCode');
 
         return res.status(200).json({
