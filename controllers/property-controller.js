@@ -1,4 +1,10 @@
 
+const axios = require('axios');
+const cheerio = require('cheerio');
+const PropertyRecord = require('../models/PropertyRecordSchema');
+const { extractPropertyData } = require('../utils/extractPropertyData');
+
+
 exports.fetchPropertyData = async (req, res) => {
     try {
         const { districtCode, sroCode, propertyId, propNEWAddress, gaonCode1 } = req.body;
