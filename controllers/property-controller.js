@@ -493,3 +493,260 @@ exports.getPropertyRecordsByGaonCode = async (req, res) => {
     }
 };
 
+/**
+ * Advanced property records filtering API
+ * Supports filtering by multiple criteria, text search, and date ranges
+ */
+exports.advancedFilter = async (req, res) => {
+    try {
+        const { 
+            districtCode, 
+            sroCode, 
+            gaonCode1,
+            year,
+            month,
+            propertyOwnerName,
+            propertyDesc,
+            regNo,
+            deedType,
+            startDate,
+            endDate,
+            page = 1, 
+            limit = 10,
+            sortBy = 'regDate',
+            sortOrder = 'desc'
+        } = req.body;
+
+        // Build the aggregation pipeline
+        const pipeline = [];
+        
+        // Stage 1: Match on main collection filters
+        const mainFilters = {};
+        if (districtCode) mainFilters.districtCode = districtCode;
+        if (sroCode) {
+            // Handle array of SRO codes or single value
+            if (Array.isArray(sroCode)) {
+                mainFilters.sroCode = { $in: sroCode };
+            } else {
+                mainFilters.sroCode = sroCode;
+            }
+        }
+        if (gaonCode1) mainFilters.gaonCode1 = gaonCode1;
+        
+        if (Object.keys(mainFilters).length > 0) {
+            pipeline.push({ $match: mainFilters });
+        }
+        
+        // Stage 2: Unwind the property records array for detailed filtering
+        pipeline.push({ $unwind: "$propertyRecords" });
+        
+        // Stage 3: Match on property record specific filters
+        const recordFilters = {};
+        
+        // Year filter
+        if (year) {
+            recordFilters["propertyRecords.year"] = year.toString();
+        }
+        
+        // Month filter (extract month from regDate)
+        if (month) {
+            // Add a stage to process and filter by month
+            pipeline.push({
+                $addFields: {
+                    // Extract month from registration date (assuming format YYYY-MM-DD)
+                    extractedMonth: {
+                        $month: {
+                            $dateFromString: {
+                                dateString: "$propertyRecords.regDate",
+                                format: "%Y-%m-%d",
+                                onError: new Date(0) // Fallback date
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Filter by the extracted month
+            pipeline.push({
+                $match: {
+                    extractedMonth: parseInt(month)
+                }
+            });
+        }
+        
+        // Registration number filter
+        if (regNo) {
+            recordFilters["propertyRecords.regNo"] = { $regex: new RegExp(regNo, "i") };
+        }
+        
+        // Deed type filter
+        if (deedType) {
+            recordFilters["propertyRecords.deedType"] = { $regex: new RegExp(deedType, "i") };
+        }
+        
+        // Date range filter
+        if (startDate || endDate) {
+            recordFilters["propertyRecords.regDate"] = {};
+            if (startDate) {
+                recordFilters["propertyRecords.regDate"]["$gte"] = startDate;
+            }
+            if (endDate) {
+                recordFilters["propertyRecords.regDate"]["$lte"] = endDate;
+            }
+        }
+        
+        // Property owner name filter (search in party names array)
+        if (propertyOwnerName) {
+            recordFilters["propertyRecords.partyNames"] = { 
+                $elemMatch: { $regex: new RegExp(propertyOwnerName, "i") } 
+            };
+        }
+        
+        // Property description text search
+        if (propertyDesc) {
+            recordFilters["propertyRecords.propertyDesc"] = { 
+                $regex: new RegExp(propertyDesc, "i") 
+            };
+        }
+        
+        // Apply record filters if any exist
+        if (Object.keys(recordFilters).length > 0) {
+            pipeline.push({ $match: recordFilters });
+        }
+        
+        // Get total count before pagination
+        const countPipeline = [...pipeline];
+        countPipeline.push({ $count: "total" });
+        
+        const countResult = await PropertyRecord.aggregate(countPipeline);
+        const totalCount = countResult.length > 0 ? countResult[0].total : 0;
+        
+        // Add sorting
+        const sortField = sortBy === 'regDate' ? 'propertyRecords.regDate' : `propertyRecords.${sortBy}`;
+        pipeline.push({ 
+            $sort: { [sortField]: sortOrder === 'desc' ? -1 : 1 } 
+        });
+        
+        // Add pagination
+        pipeline.push({ $skip: (parseInt(page) - 1) * parseInt(limit) });
+        pipeline.push({ $limit: parseInt(limit) });
+        
+        // Final stage: Group by original document with filtered property records
+        pipeline.push({
+            $group: {
+                _id: "$_id",
+                districtCode: { $first: "$districtCode" },
+                sroCode: { $first: "$sroCode" },
+                gaonCode1: { $first: "$gaonCode1" },
+                propertyId: { $first: "$propertyId" },
+                propNEWAddress: { $first: "$propNEWAddress" },
+                originalSearchParams: { 
+                    $first: {
+                        districtCode: "$districtCode",
+                        sroCode: "$sroCode",
+                        gaonCode1: "$gaonCode1"
+                    }
+                },
+                matchedRecords: { $push: "$propertyRecords" },
+                createdAt: { $first: "$createdAt" },
+                updatedAt: { $first: "$updatedAt" }
+            }
+        });
+        
+        // Execute the aggregation
+        const results = await PropertyRecord.aggregate(pipeline);
+        
+        return res.status(200).json({
+            success: true,
+            totalCount,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            totalPages: Math.ceil(totalCount / parseInt(limit)),
+            data: results
+        });
+        
+    } catch (error) {
+        console.error('Error in advanced filter:', error);
+        return res.status(500).json({
+            success: false,
+            message: `An error occurred: ${error.message}`
+        });
+    }
+};
+
+/**
+ * Get available filter options for UI (years, months, deed types)
+ */
+exports.getFilterOptions = async (req, res) => {
+    try {
+        // Get unique years from all property records
+        const yearsPipeline = [
+            { $unwind: "$propertyRecords" },
+            { $group: { _id: "$propertyRecords.year" } },
+            { $match: { _id: { $ne: null } } },
+            { $sort: { _id: -1 } }
+        ];
+        const yearsResult = await PropertyRecord.aggregate(yearsPipeline);
+        const years = yearsResult.map(item => item._id);
+        
+        // Get unique deed types
+        const deedTypesPipeline = [
+            { $unwind: "$propertyRecords" },
+            { $group: { _id: "$propertyRecords.deedType" } },
+            { $match: { _id: { $ne: null } } },
+            { $sort: { _id: 1 } }
+        ];
+        const deedTypesResult = await PropertyRecord.aggregate(deedTypesPipeline);
+        const deedTypes = deedTypesResult.map(item => item._id);
+        
+        // Get SRO codes with counts
+        const sroCodesPipeline = [
+            {
+                $group: {
+                    _id: "$sroCode",
+                    count: { $sum: 1 },
+                    recordCount: { $sum: "$recordCount" }
+                }
+            },
+            { $sort: { recordCount: -1 } }
+        ];
+        const sroCodesResult = await PropertyRecord.aggregate(sroCodesPipeline);
+        
+        // For the UI, prepare months data
+        const months = [
+            { id: 1, name: "January" },
+            { id: 2, name: "February" },
+            { id: 3, name: "March" },
+            { id: 4, name: "April" },
+            { id: 5, name: "May" },
+            { id: 6, name: "June" },
+            { id: 7, name: "July" },
+            { id: 8, name: "August" },
+            { id: 9, name: "September" },
+            { id: 10, name: "October" },
+            { id: 11, name: "November" },
+            { id: 12, name: "December" }
+        ];
+        
+        return res.status(200).json({
+            success: true,
+            filterOptions: {
+                years,
+                months,
+                deedTypes,
+                sroCodes: sroCodesResult.map(item => ({
+                    code: item._id,
+                    searchCount: item.count,
+                    recordCount: item.recordCount
+                }))
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error fetching filter options:', error);
+        return res.status(500).json({
+            success: false,
+            message: `An error occurred: ${error.message}`
+        });
+    }
+};
