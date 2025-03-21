@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const propertyController = require('../controllers/property-controller');
 
-
-
 // Get all SRO codes present in the database
 router.get('/sro-codes', propertyController.getSroCodes);
 
