@@ -1,6 +1,5 @@
 
 const axios = require('axios');
-const cheerio = require('cheerio');
 const PropertyRecord = require('../models/PropertyRecordSchema');
 const { extractPropertyData } = require('../utils/extractPropertyData');
 
@@ -531,6 +530,3 @@ exports.getPropertyRecordsByGaonCode = async (req, res) => {
         });
     }
 };
-
-
-/* property record is not define */
