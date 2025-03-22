@@ -39,6 +39,10 @@ const dotenv = require('dotenv');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const propertyRoutes = require('./routes/property-routes');
+const propertyDetailsRoutes = require('./routes/propertyDetail-routes');
+const deedRoutes = require('./routes/deadRoutes');
+const path = require('path');
+
 
 // Load environment variables from .env file
 dotenv.config();
@@ -56,8 +60,14 @@ mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Connected to MongoDB'))
     .catch(err => console.error('MongoDB connection error:', err));
 
+// Static folder for uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.use('/api', propertyRoutes);
+app.use('/details', propertyDetailsRoutes);
+app.use('/api', deedRoutes);
+
 
 // Root route
 app.get('/', (req, res) => {

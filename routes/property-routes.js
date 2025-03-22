@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const propertyController = require('../controllers/property-controller');
 
+
+// Get party name suggestions as user types
+router.get('/property-records/party-suggestions', propertyController.getPartyNameSuggestions);
+
+// Get property records by party name
+router.get('/property-records/party-records', propertyController.getRecordsByPartyName);
+
+
 // Get all SRO codes present in the database
 router.get('/sro-codes', propertyController.getSroCodes);
 
@@ -27,5 +35,6 @@ router.get('/property-records/stats', propertyController.getDistrictStatistics);
 
 // Advanced search endpoint (new)
 router.post('/property-records/search', propertyController.searchPropertyRecords);
+
 
 module.exports = router;
