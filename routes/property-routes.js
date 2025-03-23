@@ -21,7 +21,7 @@ router.get('/dashboard', propertyController.getDatabaseStats);
 router.get('/gaon-distribution', propertyController.getPropertyRecordsByGaonCode);
 
 
-// Fetch property data from external API and store in database
+// Fetch property data from external API and store in database **********************
 router.post('/property-data', propertyController.fetchPropertyData);
 
 // Get property records with optional filtering

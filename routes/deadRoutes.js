@@ -5,6 +5,7 @@ const fs = require('fs').promises;
 const path = require('path');
 const deedParser = require('../utils/deedParser');
 const Deed = require('../models/deedSchema');
+const deedController = require('../controllers/deed-conroller');
 
 // Set up multer for file uploads
 const storage = multer.diskStorage({
@@ -37,6 +38,16 @@ const upload = multer({
         fileSize: 10 * 1024 * 1024 // 10MB max file size
     }
 });
+
+
+// Route to process property records in batches
+router.get('/processDeeds', deedController.fetchDeedsInBatches);
+
+// Route to get processing statistics
+router.get('/processingStats', deedController.getProcessingStats);
+
+// Route to reset processing state
+router.post('/resetProcessing', deedController.resetProcessingState);
 
 /**
  * @route   POST /api/deeds
@@ -528,5 +539,8 @@ router.get('/stats', async (req, res) => {
         });
     }
 });
+
+
+
 
 module.exports = router;

@@ -1,0 +1,2 @@
+=== BATCH PROCESSING STARTED AT 2025-03-23T13:20:42.464Z ===
+[2025-03-23T13:20:46.941Z] Error fetching statistics: Request failed with status code 500

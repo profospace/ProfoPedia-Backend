@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { db2 } = require('../database/db');
 
 // Define the schema for a party (seller, buyer, or witness)
 const partySchema = new mongoose.Schema({
@@ -137,6 +138,58 @@ const deedSchema = new mongoose.Schema({
     secondParty: [partySchema],
     witnesses: [partySchema],
 
+    // Form Data Fields from the request
+    dcode: {
+        type: String,
+        trim: true,
+        index: true
+    },
+    regno: {
+        type: String,
+        trim: true,
+        index: true
+    },
+    regyear: {
+        type: String,
+        trim: true,
+        index: true
+    },
+    regdate: {
+        type: String,
+        trim: true
+    },
+    srocode: {
+        type: String,
+        trim: true,
+        index: true
+    },
+    recieptNo: {
+        type: String,
+        trim: true
+    },
+    pcode: {
+        type: String,
+        trim: true
+    },
+    propertyNum: {
+        type: String,
+        trim: true
+    },
+    subDeedCode: {
+        type: String,
+        trim: true
+    },
+    propertyId: {
+        type: String,
+        trim: true
+    },
+    detailUniqueId: {
+        type: String,
+        trim: true,
+        unique: true,
+        index: true
+    },
+
     // Meta Information
     createdAt: {
         type: Date,
@@ -227,6 +280,6 @@ function getMonthNumber(monthStr) {
 }
 
 // Create and export the model
-const Deed = mongoose.model('Deed', deedSchema);
+const Deed = db2.model('Deed', deedSchema);
 
 module.exports = Deed;

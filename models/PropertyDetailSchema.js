@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { db1 } = require('../database/db');
 
 // Schema for storing detailed property information
 const PropertyDetailSchema = new mongoose.Schema({
@@ -116,4 +117,4 @@ PropertyDetailSchema.index({
     'registrationDetails.srocode': 1
 });
 
-module.exports = mongoose.model('PropertyDetail', PropertyDetailSchema);
+module.exports = db1.model('PropertyDetail', PropertyDetailSchema);
