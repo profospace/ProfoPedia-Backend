@@ -41,6 +41,7 @@ const cheerio = require('cheerio');
 const propertyRoutes = require('./routes/property-routes');
 const propertyDetailsRoutes = require('./routes/propertyDetail-routes');
 const deedRoutes = require('./routes/deadRoutes');
+const automationRoutes = require('./routes/automation-routes');
 const path = require('path');
 
 
@@ -55,18 +56,20 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('Connected to MongoDB'))
-    .catch(err => console.error('MongoDB connection error:', err));
+app.get('/automation', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/automation.html'));
+});
+
+app.use('/deeds', propertyDetailsRoutes);
+app.use('/api/deeds', deedRoutes);
+app.use('/api/automation', automationRoutes);
 
 // Static folder for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api', propertyRoutes);
-app.use('/details', propertyDetailsRoutes);
-app.use('/api', deedRoutes);
+// app.use('/api', deedRoutes);
 
 
 // Root route
