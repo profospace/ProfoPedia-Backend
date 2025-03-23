@@ -1,0 +1,88 @@
+const mongoose = require('mongoose');
+
+const AutomationStateSchema = new mongoose.Schema({
+  lastProcessedPage: {
+    type: Number,
+    default: -1
+  },
+  isRunning: {
+    type: Boolean,
+    default: false
+  },
+  startedAt: {
+    type: Date
+  },
+  completedAt: {
+    type: Date
+  },
+  batchSize: {
+    type: Number,
+    default: 10
+  },
+  totalBatches: {
+    type: Number,
+    default: 0
+  },
+  error: {
+    type: String
+  },
+  logs: [{
+    message: String,
+    level: {
+      type: String,
+      enum: ['info', 'error', 'warning'],
+      default: 'info'
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  }]
+}, { timestamps: true });
+
+// Static method to get or create the automation state
+AutomationStateSchema.statics.getState = async function() {
+  const state = await this.findOne();
+  if (state) {
+    return state;
+  }
+  
+  // Create a new state if none exists
+  return await this.create({});
+};
+
+// Method to add a log entry
+AutomationStateSchema.methods.addLog = function(message, level = 'info') {
+  this.logs.push({ message, level });
+  return this.save();
+};
+
+// Method to update page progress
+AutomationStateSchema.methods.updateProgress = function(page) {
+  this.lastProcessedPage = page;
+  return this.save();
+};
+
+// Method to start automation
+AutomationStateSchema.methods.startAutomation = function(startPage, totalBatches, batchSize) {
+  this.isRunning = true;
+  this.startedAt = new Date();
+  this.completedAt = null;
+  this.lastProcessedPage = startPage - 1; // Will increment to startPage on first process
+  this.totalBatches = totalBatches;
+  this.batchSize = batchSize;
+  this.error = null;
+  return this.save();
+};
+
+// Method to stop automation
+AutomationStateSchema.methods.stopAutomation = function(error = null) {
+  this.isRunning = false;
+  this.completedAt = new Date();
+  if (error) {
+    this.error = error;
+  }
+  return this.save();
+};
+
+module.exports = mongoose.model('AutomationState', AutomationStateSchema);

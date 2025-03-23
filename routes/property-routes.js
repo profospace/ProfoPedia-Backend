@@ -10,6 +10,21 @@ router.get('/property-records/party-suggestions', propertyController.getPartyNam
 router.get('/property-records/party-records', propertyController.getRecordsByPartyName);
 
 
+const automationController = require('../controllers/automationController');
+
+// Get automation status
+router.get('/status', automationController.getStatus);
+
+// Start automation
+router.post('/start', automationController.startAutomation);
+
+// Stop automation
+router.post('/stop', automationController.stopAutomation);
+
+// Get logs
+router.get('/logs', automationController.getLogs);
+
+
 // Get all SRO codes present in the database
 router.get('/sro-codes', propertyController.getSroCodes);
 

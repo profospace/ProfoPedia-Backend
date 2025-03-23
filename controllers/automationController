@@ -1,0 +1,218 @@
+const AutomationState = require('../models/AutomationStateSchema');
+const PropertyRecord = require('../models/PropertyRecordSchema');
+const deedController = require('./deedController');
+const logger = require('../utils/logger');
+
+// Get the current automation status
+exports.getStatus = async (req, res) => {
+    try {
+        const state = await AutomationState.getState();
+        
+        // Get current stats
+        let stats = null;
+        try {
+            const statsResponse = await deedController.getProcessingStats(req, { 
+                status: () => {}, 
+                json: (data) => { stats = data; } 
+            });
+        } catch (error) {
+            logger.error('Error fetching stats', error);
+        }
+
+        return res.status(200).json({
+            success: true,
+            isRunning: state.isRunning,
+            lastProcessedPage: state.lastProcessedPage,
+            startedAt: state.startedAt,
+            completedAt: state.completedAt,
+            totalBatches: state.totalBatches,
+            batchSize: state.batchSize,
+            error: state.error,
+            stats: stats?.stats || null,
+            // Only include the most recent 50 logs for performance
+            recentLogs: state.logs.slice(-50)
+        });
+    } catch (error) {
+        logger.error('Error getting automation status', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to get automation status',
+            error: error.message
+        });
+    }
+};
+
+// Start the automation process
+exports.startAutomation = async (req, res) => {
+    try {
+        const startPage = parseInt(req.body.startPage) || 0;
+        const batchSize = parseInt(req.body.batchSize) || 10;
+
+        // Get the automation state
+        const state = await AutomationState.getState();
+        
+        // Don't start if already running
+        if (state.isRunning) {
+            return res.status(400).json({
+                success: false,
+                message: 'Automation is already running'
+            });
+        }
+
+        // Count total property records to determine number of batches
+        const totalRecords = await PropertyRecord.countDocuments();
+        if (totalRecords === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No property records found in the database.'
+            });
+        }
+
+        // Calculate total number of batches
+        const totalBatches = Math.ceil(totalRecords / batchSize);
+        
+        // Check if the start page is valid
+        if (startPage >= totalBatches) {
+            return res.status(400).json({
+                success: false,
+                message: `Requested page ${startPage} exceeds total batches ${totalBatches}`
+            });
+        }
+
+        // Update the state to running
+        await state.startAutomation(startPage, totalBatches, batchSize);
+        await state.addLog(`Starting automation from page ${startPage}`);
+
+        // Start the processing in the background
+        startProcessing(startPage, batchSize);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Automation started successfully',
+            startingFromPage: startPage,
+            totalBatches
+        });
+    } catch (error) {
+        logger.error('Error starting automation', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to start automation',
+            error: error.message
+        });
+    }
+};
+
+// Stop the automation process
+exports.stopAutomation = async (req, res) => {
+    try {
+        const state = await AutomationState.getState();
+        
+        if (!state.isRunning) {
+            return res.status(400).json({
+                success: false,
+                message: 'Automation is not running'
+            });
+        }
+
+        // Set a flag to stop the automation
+        global.stopAutomation = true;
+        await state.addLog('Stop command received, will stop after current batch completes');
+
+        return res.status(200).json({
+            success: true,
+            message: 'Stop command sent, automation will stop after current batch'
+        });
+    } catch (error) {
+        logger.error('Error stopping automation', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to stop automation',
+            error: error.message
+        });
+    }
+};
+
+// Get recent logs
+exports.getLogs = async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 100;
+        const state = await AutomationState.getState();
+        
+        return res.status(200).json({
+            success: true,
+            logs: state.logs.slice(-limit)
+        });
+    } catch (error) {
+        logger.error('Error getting logs', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Failed to get logs',
+            error: error.message
+        });
+    }
+};
+
+// Background processing function
+async function startProcessing(startPage, batchSize) {
+    // Reset the stop flag
+    global.stopAutomation = false;
+    
+    let currentPage = startPage;
+    const state = await AutomationState.getState();
+
+    try {
+        while (!global.stopAutomation) {
+            // Create a fake request and response for the controller
+            const req = {
+                query: {
+                    page: currentPage,
+                    batchSize
+                }
+            };
+
+            let responseData = null;
+            const res = {
+                status: () => ({
+                    json: (data) => {
+                        responseData = data;
+                    }
+                })
+            };
+
+            // Call the fetchDeedsInBatches function
+            await deedController.fetchDeedsInBatches(req, res);
+
+            // Log the results
+            const message = responseData.success
+                ? `Processed batch ${currentPage + 1} of ${state.totalBatches} - Success: ${responseData.batchResults.successCount}, Failed: ${responseData.batchResults.failedCount}`
+                : `Failed to process batch ${currentPage + 1}: ${responseData.message}`;
+            
+            await state.addLog(message, responseData.success ? 'info' : 'error');
+            await state.updateProgress(currentPage);
+
+            // Check if we've reached the end or if we should stop
+            if (!responseData.success || responseData.batchResults.nextPage === null) {
+                if (responseData.success) {
+                    await state.addLog('All batches processed successfully', 'info');
+                } else {
+                    await state.addLog(`Processing stopped due to error: ${responseData.message}`, 'error');
+                }
+                break;
+            }
+
+            // Move to the next page
+            currentPage = responseData.batchResults.nextPage;
+
+            // Add a small delay to avoid overwhelming the server
+            await new Promise(resolve => setTimeout(resolve, 500));
+        }
+    } catch (error) {
+        logger.error('Error in background processing', error);
+        await state.addLog(`Processing error: ${error.message}`, 'error');
+        await state.stopAutomation(error.message);
+        return;
+    }
+
+    // Mark processing as completed
+    await state.stopAutomation();
+}
