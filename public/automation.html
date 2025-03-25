@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deed Processing Automation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        .button.stop {
+            background-color: #f44336;
+        }
+
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .running {
+            color: green;
+        }
+
+        .stopped {
+            color: blue;
+        }
+
+        .error {
+            color: red;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table,
+        th,
+        td {
+            border: 1px solid #ddd;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .log {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f5f5f5;
+            font-family: monospace;
+        }
+
+        .control-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+         /* Add these styles to your existing CSS */
+    .running { color: green; }
+    .completed { color: blue; }
+    .failed { color: red; }
+    .stopped { color: orange; }
+    
+    .pagination {
+        margin-top: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .page-info {
+        font-weight: bold;
+        margin: 0 10px;
+    }
+    
+    #logsTable {
+        width: 100%;
+        margin-top: 15px;
+    }
+    </style>
+</head>
+
+<body>
+    <h1>Deed Processing Automation</h1>
+
+    <div class="card">
+        <h2>Controls</h2>
+        <div class="control-row">
+            <button id="startBtn" class="button">Start from Beginning</button>
+            <button id="continueBtn" class="button">Continue from Last Page</button>
+            <button id="stopBtn" class="button stop" disabled>Stop Automation</button>
+            <button id="refreshBtn" class="button">Refresh Status</button>
+        </div>
+
+        <div class="control-row" style="margin-top: 10px;">
+            <label for="startPage">Custom Start Page:</label>
+            <input type="number" id="startPage" min="0" value="0" style="width: 80px; margin-right: 10px;">
+            <button id="startCustomBtn" class="button">Start from Custom Page</button>
+        </div>
+
+        <div class="status">Status: <span id="status" class="stopped">Not Running</span></div>
+        <div id="startTime"></div>
+        <div id="lastPage"></div>
+        <div id="errorMsg" class="error"></div>
+    </div>
+
+    <div class="card">
+        <h2>Processing Statistics</h2>
+        <table id="statsTable">
+            <tr>
+                <th>Metric</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Total Records</td>
+                <td id="totalRecords">-</td>
+            </tr>
+            <tr>
+                <td>Processed Records</td>
+                <td id="totalProcessed">-</td>
+            </tr>
+            <tr>
+                <td>Successful Deeds</td>
+                <td id="successfulDeeds">-</td>
+            </tr>
+            <tr>
+                <td>Failed Deeds</td>
+                <td id="failedDeeds">-</td>
+            </tr>
+            <tr>
+                <td>Remaining to Process</td>
+                <td id="remainingToProcess">-</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Activity Log</h2>
+        <div id="log" class="log">Waiting for automation to start...</div>
+    </div>
+
+    <div class="card">
+        <h2>Processing Logs</h2>
+        <table id="logsTable">
+            <thead>
+                <tr>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Status</th>
+                    <th>Last Page</th>
+                    <th>Total Pages</th>
+                    <th>Error</th>
+                </tr>
+            </thead>
+            <tbody id="logsTableBody">
+                <!-- Logs will be inserted here -->
+            </tbody>
+        </table>
+        <div class="pagination" id="logsPagination">
+            <!-- Pagination controls will be added here -->
+        </div>
+    </div>
+
+
+    <script>
+        // DOM elements
+        const startBtn = document.getElementById('startBtn');
+        const continueBtn = document.getElementById('continueBtn');
+        const startCustomBtn = document.getElementById('startCustomBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const statusEl = document.getElementById('status');
+        const startTimeEl = document.getElementById('startTime');
+        const lastPageEl = document.getElementById('lastPage');
+        const errorMsgEl = document.getElementById('errorMsg');
+        const logEl = document.getElementById('log');
+        const startPageInput = document.getElementById('startPage');
+
+        // Stats elements
+        const totalRecordsEl = document.getElementById('totalRecords');
+        const totalProcessedEl = document.getElementById('totalProcessed');
+        const successfulDeedsEl = document.getElementById('successfulDeeds');
+        const failedDeedsEl = document.getElementById('failedDeeds');
+        const remainingToProcessEl = document.getElementById('remainingToProcess');
+
+        // Logs table elements
+        const logsTableBody = document.getElementById('logsTableBody');
+        const logsPagination = document.getElementById('logsPagination');
+
+        // API endpoints
+        const API_BASE = '/api/automation';
+
+        // Last processed page from server
+        let serverLastPage = -1;
+
+        // Update status from the server
+        async function updateStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Store last page from server
+                    serverLastPage = data.lastProcessedPage;
+
+                    // Update status
+                    if (data.isRunning) {
+                        statusEl.textContent = 'Running';
+                        statusEl.className = 'running';
+                        startBtn.disabled = true;
+                        continueBtn.disabled = true;
+                        startCustomBtn.disabled = true;
+                        stopBtn.disabled = false;
+
+                        if (data.startedAt) {
+                            const startDate = new Date(data.startedAt);
+                            startTimeEl.textContent = `Started at: ${startDate.toLocaleString()}`;
+                        }
+                    } else {
+                        statusEl.textContent = 'Not Running';
+                        statusEl.className = 'stopped';
+                        startBtn.disabled = false;
+                        continueBtn.disabled = serverLastPage < 0;
+                        startCustomBtn.disabled = false;
+                        stopBtn.disabled = true;
+
+                        if (data.startedAt) {
+                            const startDate = new Date(data.startedAt);
+                            startTimeEl.textContent = `Last run started at: ${startDate.toLocaleString()}`;
+                        } else {
+                            startTimeEl.textContent = '';
+                        }
+                    }
+
+                    // Update last page info
+                    if (data.lastProcessedPage >= 0) {
+                        lastPageEl.textContent = `Last processed page: ${data.lastProcessedPage}`;
+                        // Update the custom page input to suggest the next page
+                        startPageInput.value = data.lastProcessedPage + 1;
+                    } else {
+                        lastPageEl.textContent = 'No pages processed yet';
+                    }
+
+                    // Update error message
+                    if (data.error) {
+                        errorMsgEl.textContent = `Error: ${data.error}`;
+                    } else {
+                        errorMsgEl.textContent = '';
+                    }
+
+                    // Update stats
+                    if (data.stats) {
+                        totalRecordsEl.textContent = data.stats.totalRecords || '-';
+                        totalProcessedEl.textContent = data.stats.totalProcessed || '-';
+                        successfulDeedsEl.textContent = data.stats.successfulDeeds || '-';
+                        failedDeedsEl.textContent = data.stats.failedDeeds || '-';
+                        remainingToProcessEl.textContent = data.stats.remainingToProcess || '-';
+                    }
+                } else {
+                    appendToLog('Failed to update status: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                appendToLog('Error updating status: ' + error.message);
+            }
+        }
+
+        // Start automation from the beginning (page 0)
+        async function startAutomation() {
+            try {
+                startBtn.disabled = true;
+                continueBtn.disabled = true;
+                startCustomBtn.disabled = true;
+                appendToLog('Starting automation from the beginning...');
+
+                const response = await fetch(`${API_BASE}/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        startPage: 0
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    appendToLog(`Automation started successfully from page ${data.startingFromPage}`);
+                    updateStatus();
+                    // Start polling for updates
+                    startStatusPolling();
+                } else {
+                    appendToLog('Failed to start automation: ' + (data.message || 'Unknown error'));
+                    startBtn.disabled = false;
+                    continueBtn.disabled = false;
+                    startCustomBtn.disabled = false;
+                }
+            } catch (error) {
+                appendToLog('Error starting automation: ' + error.message);
+                startBtn.disabled = false;
+                continueBtn.disabled = false;
+                startCustomBtn.disabled = false;
+            }
+        }
+
+        // Continue automation from last processed page
+        async function continueAutomation() {
+            try {
+                if (serverLastPage < 0) {
+                    appendToLog('No previous page information available. Starting from the beginning.');
+                    startAutomation();
+                    return;
+                }
+
+                startBtn.disabled = true;
+                continueBtn.disabled = true;
+                startCustomBtn.disabled = true;
+                const nextPage = serverLastPage + 1;
+                appendToLog(`Continuing automation from page ${nextPage}...`);
+
+                const response = await fetch(`${API_BASE}/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        startPage: nextPage
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    appendToLog(`Automation continued successfully from page ${data.startingFromPage}`);
+                    updateStatus();
+                    // Start polling for updates
+                    startStatusPolling();
+                } else {
+                    appendToLog('Failed to continue automation: ' + (data.message || 'Unknown error'));
+                    startBtn.disabled = false;
+                    continueBtn.disabled = false;
+                    startCustomBtn.disabled = false;
+                }
+            } catch (error) {
+                appendToLog('Error continuing automation: ' + error.message);
+                startBtn.disabled = false;
+                continueBtn.disabled = false;
+                startCustomBtn.disabled = false;
+            }
+        }
+
+        // Start automation from custom page
+        async function startFromCustomPage() {
+            try {
+                const customPage = parseInt(startPageInput.value) || 0;
+                if (customPage < 0) {
+                    appendToLog('Page number must be positive. Using page 0 instead.');
+                    startPageInput.value = 0;
+                }
+
+                startBtn.disabled = true;
+                continueBtn.disabled = true;
+                startCustomBtn.disabled = true;
+                appendToLog(`Starting automation from custom page ${customPage}...`);
+
+                const response = await fetch(`${API_BASE}/start`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        startPage: customPage
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    appendToLog(`Automation started successfully from page ${data.startingFromPage}`);
+                    updateStatus();
+                    // Start polling for updates
+                    startStatusPolling();
+                } else {
+                    appendToLog('Failed to start automation: ' + (data.message || 'Unknown error'));
+                    startBtn.disabled = false;
+                    continueBtn.disabled = false;
+                    startCustomBtn.disabled = false;
+                }
+            } catch (error) {
+                appendToLog('Error starting automation: ' + error.message);
+                startBtn.disabled = false;
+                continueBtn.disabled = false;
+                startCustomBtn.disabled = false;
+            }
+        }
+
+        // Stop automation
+        async function stopAutomation() {
+            try {
+                stopBtn.disabled = true;
+                appendToLog('Stopping automation...');
+
+                const response = await fetch(`${API_BASE}/stop`, {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    appendToLog('Stop signal sent. Automation will stop after current batch');
+                    updateStatus();
+                } else {
+                    appendToLog('Failed to stop automation: ' + (data.message || 'Unknown error'));
+                    stopBtn.disabled = false;
+                }
+            } catch (error) {
+                appendToLog('Error stopping automation: ' + error.message);
+                stopBtn.disabled = false;
+            }
+        }
+
+        // Append message to log
+        function appendToLog(message) {
+            const now = new Date();
+            const timestamp = now.toLocaleTimeString();
+            logEl.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // Status polling
+        let pollingInterval;
+
+        function startStatusPolling() {
+            // Clear any existing interval
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+            }
+
+            // Poll every 5 seconds
+            pollingInterval = setInterval(updateStatus, 5000);
+        }
+
+
+        // Logs pagination state
+        let logsCurrentPage = 1;
+        let logsTotalPages = 1;
+
+        // Fetch processing logs
+        async function fetchProcessingLogs(page = 1) {
+            try {
+                const response = await fetch(`${API_BASE}/logs?page=${page}&limit=5`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update pagination info
+                    logsCurrentPage = data.pagination.page;
+                    logsTotalPages = data.pagination.pages;
+
+                    // Clear existing rows
+                    logsTableBody.innerHTML = '';
+
+                    // Add log rows
+                    data.data.forEach(log => {
+                        const startTime = new Date(log.startTime).toLocaleString();
+                        const endTime = log.endTime ? new Date(log.endTime).toLocaleString() : '-';
+
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                        <td>${startTime}</td>
+                        <td>${endTime}</td>
+                        <td class="${log.status}">${log.status}</td>
+                        <td>${log.lastProcessedPage}</td>
+                        <td>${log.totalPages || '-'}</td>
+                        <td class="error">${log.error || '-'}</td>
+                    `;
+                        logsTableBody.appendChild(row);
+                    });
+
+                    // Update pagination controls
+                    updateLogsPagination();
+                } else {
+                    appendToLog('Failed to fetch logs: ' + (data.message || 'Unknown error'));
+                }
+            } catch (error) {
+                appendToLog('Error fetching logs: ' + error.message);
+            }
+        }
+
+        // Update logs pagination controls
+        function updateLogsPagination() {
+            logsPagination.innerHTML = '';
+
+            if (logsTotalPages <= 1) return;
+
+            // Previous button
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'button';
+            prevBtn.textContent = 'Previous';
+            prevBtn.disabled = logsCurrentPage === 1;
+            prevBtn.addEventListener('click', () => {
+                if (logsCurrentPage > 1) {
+                    fetchProcessingLogs(logsCurrentPage - 1);
+                }
+            });
+            logsPagination.appendChild(prevBtn);
+
+            // Current page indicator
+            const pageInfo = document.createElement('span');
+            pageInfo.textContent = `Page ${logsCurrentPage} of ${logsTotalPages}`;
+            pageInfo.className = 'page-info';
+            logsPagination.appendChild(pageInfo);
+
+            // Next button
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'button';
+            nextBtn.textContent = 'Next';
+            nextBtn.disabled = logsCurrentPage === logsTotalPages;
+            nextBtn.addEventListener('click', () => {
+                if (logsCurrentPage < logsTotalPages) {
+                    fetchProcessingLogs(logsCurrentPage + 1);
+                }
+            });
+            logsPagination.appendChild(nextBtn);
+        }
+
+        // Add fetch logs to the refresh button
+        refreshBtn.addEventListener('click', () => {
+            updateStatus();
+            fetchProcessingLogs();
+        });
+
+        // Initial logs fetch
+        fetchProcessingLogs();
+
+        // Event listeners
+        startBtn.addEventListener('click', startAutomation);
+        continueBtn.addEventListener('click', continueAutomation);
+        startCustomBtn.addEventListener('click', startFromCustomPage);
+        stopBtn.addEventListener('click', stopAutomation);
+        refreshBtn.addEventListener('click', updateStatus);
+
+        // Initial status update
+        updateStatus();
+    </script>
+</body>
+
+</html>

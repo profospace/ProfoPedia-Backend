@@ -1,0 +1,302 @@
+[
+    {
+        "districtCode": "178",
+        "districtName": "अंबेडकर नगर"
+    },
+    {
+        "districtCode": "137",
+        "districtName": "अमरोहा"
+    },
+    {
+        "districtCode": "203",
+        "districtName": "अमेठी"
+    },
+    {
+        "districtCode": "177",
+        "districtName": "अयोध्या"
+    },
+    {
+        "districtCode": "143",
+        "districtName": "अलीगढ़"
+    },
+    {
+        "districtCode": "146",
+        "districtName": "आगरा"
+    },
+    {
+        "districtCode": "191",
+        "districtName": "आजमगढ़"
+    },
+    {
+        "districtCode": "161",
+        "districtName": "इटावा"
+    },
+    {
+        "districtCode": "156",
+        "districtName": "उन्नाव"
+    },
+    {
+        "districtCode": "201",
+        "districtName": "एटा"
+    },
+    {
+        "districtCode": "162",
+        "districtName": "औरैया"
+    },
+    {
+        "districtCode": "160",
+        "districtName": "कन्नौज"
+    },
+    {
+        "districtCode": "163",
+        "districtName": "कानपुर देहात"
+    },
+    {
+        "districtCode": "164",
+        "districtName": "कानपुर नगर"
+    },
+    {
+        "districtCode": "202",
+        "districtName": "कासगंज"
+    },
+    {
+        "districtCode": "189",
+        "districtName": "कुशीनगर"
+    },
+    {
+        "districtCode": "174",
+        "districtName": "कौशांबी"
+    },
+    {
+        "districtCode": "140",
+        "districtName": "गाजियाबाद"
+    },
+    {
+        "districtCode": "195",
+        "districtName": "गाजीपुर"
+    },
+    {
+        "districtCode": "183",
+        "districtName": "गोंडा"
+    },
+    {
+        "districtCode": "188",
+        "districtName": "गोरखपुर"
+    },
+    {
+        "districtCode": "141",
+        "districtName": "गौतम बुद्ध नगर"
+    },
+    {
+        "districtCode": "196",
+        "districtName": "चंदौली"
+    },
+    {
+        "districtCode": "171",
+        "districtName": "चित्रकूट"
+    },
+    {
+        "districtCode": "165",
+        "districtName": "जालौन"
+    },
+    {
+        "districtCode": "194",
+        "districtName": "जौनपुर"
+    },
+    {
+        "districtCode": "166",
+        "districtName": "झांसी"
+    },
+    {
+        "districtCode": "190",
+        "districtName": "देवरिया"
+    },
+    {
+        "districtCode": "151",
+        "districtName": "पीलीभीत"
+    },
+    {
+        "districtCode": "173",
+        "districtName": "प्रतापगढ़"
+    },
+    {
+        "districtCode": "175",
+        "districtName": "प्रयागराज"
+    },
+    {
+        "districtCode": "172",
+        "districtName": "फतेहपुर"
+    },
+    {
+        "districtCode": "159",
+        "districtName": "फर्रुखाबाद"
+    },
+    {
+        "districtCode": "147",
+        "districtName": "फ़िरोजाबाद"
+    },
+    {
+        "districtCode": "149",
+        "districtName": "बदायूं"
+    },
+    {
+        "districtCode": "150",
+        "districtName": "बरेली"
+    },
+    {
+        "districtCode": "182",
+        "districtName": "बलरामपुर"
+    },
+    {
+        "districtCode": "193",
+        "districtName": "बलिया"
+    },
+    {
+        "districtCode": "185",
+        "districtName": "बस्ती"
+    },
+    {
+        "districtCode": "180",
+        "districtName": "बहराइच"
+    },
+    {
+        "districtCode": "139",
+        "districtName": "बागपत"
+    },
+    {
+        "districtCode": "170",
+        "districtName": "बांदा"
+    },
+    {
+        "districtCode": "176",
+        "districtName": "बाराबंकी"
+    },
+    {
+        "districtCode": "134",
+        "districtName": "बिजनौर"
+    },
+    {
+        "districtCode": "142",
+        "districtName": "बुलन्दशहर"
+    },
+    {
+        "districtCode": "198",
+        "districtName": "भदोही"
+    },
+    {
+        "districtCode": "192",
+        "districtName": "मऊ"
+    },
+    {
+        "districtCode": "145",
+        "districtName": "मथुरा"
+    },
+    {
+        "districtCode": "187",
+        "districtName": "महाराजगंज"
+    },
+    {
+        "districtCode": "169",
+        "districtName": "महोबा"
+    },
+    {
+        "districtCode": "199",
+        "districtName": "मिर्जापुर"
+    },
+    {
+        "districtCode": "133",
+        "districtName": "मुजफ्फरनगर"
+    },
+    {
+        "districtCode": "135",
+        "districtName": "मुरादाबाद"
+    },
+    {
+        "districtCode": "138",
+        "districtName": "मेरठ"
+    },
+    {
+        "districtCode": "148",
+        "districtName": "मैनपुरी"
+    },
+    {
+        "districtCode": "136",
+        "districtName": "रामपुर"
+    },
+    {
+        "districtCode": "158",
+        "districtName": "रायबरेली"
+    },
+    {
+        "districtCode": "157",
+        "districtName": "लखनऊ"
+    },
+    {
+        "districtCode": "153",
+        "districtName": "लखीमपुर खीरी"
+    },
+    {
+        "districtCode": "167",
+        "districtName": "ललितपुर"
+    },
+    {
+        "districtCode": "197",
+        "districtName": "वाराणसी"
+    },
+    {
+        "districtCode": "206",
+        "districtName": "शामली"
+    },
+    {
+        "districtCode": "152",
+        "districtName": "शाहजहांपुर"
+    },
+    {
+        "districtCode": "181",
+        "districtName": "श्रावस्ती"
+    },
+    {
+        "districtCode": "186",
+        "districtName": "संत कबीर नगर"
+    },
+    {
+        "districtCode": "205",
+        "districtName": "सम्भल"
+    },
+    {
+        "districtCode": "132",
+        "districtName": "सहारनपुर"
+    },
+    {
+        "districtCode": "184",
+        "districtName": "सिद्धार्थनगर"
+    },
+    {
+        "districtCode": "154",
+        "districtName": "सीतापुर"
+    },
+    {
+        "districtCode": "179",
+        "districtName": "सुलतानपुर"
+    },
+    {
+        "districtCode": "200",
+        "districtName": "सोनभद्र"
+    },
+    {
+        "districtCode": "168",
+        "districtName": "हमीरपुर"
+    },
+    {
+        "districtCode": "155",
+        "districtName": "हरदोई"
+    },
+    {
+        "districtCode": "144",
+        "districtName": "हाथरस"
+    },
+    {
+        "districtCode": "204",
+        "districtName": "हापुड"
+    }
+]

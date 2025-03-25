@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGRSUP Village Data Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #0d6efd;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .navbar-brand img {
+            margin-right: 10px;
+        }
+
+        .stats-box {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #0d6efd;
+        }
+
+        .btn-scrape {
+            background-color: #0d6efd;
+            color: white;
+        }
+
+        .pagination {
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .search-container {
+            margin-bottom: 20px;
+        }
+
+        .sro-loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: #0d6efd;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+            display: none;
+        }
+
+        /* Add these styles to the existing <style> section in the head */
+
+        .console-panel {
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .console-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+        }
+
+        .console-timestamp {
+            color: #888;
+            margin-right: 5px;
+        }
+
+        .console-info {
+            color: #ccc;
+        }
+
+        .console-success {
+            color: #7fff7f;
+        }
+
+        .console-warning {
+            color: #ffff7f;
+        }
+
+        .console-error {
+            color: #ff7f7f;
+        }
+
+        .automation-controls {
+            margin-bottom: 15px;
+        }
+
+        .stats-box {
+            background-color: #2a2a2a;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .stats-box .badge {
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="#">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/b/b0/Uttar_Pradesh_Emblem.svg"
+                        alt="UP Logo" height="30">
+                    IGRSUP Village Data Manager
+                </a>
+            </div>
+        </nav>
+
+        <div class="row">
+            <!-- Scraping Section -->
+            <div class="col-md-5">
+                <!-- Add this after the existing cards in the left column -->
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h5 class="mb-0">Automation Console</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="automation-controls mb-3">
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <button id="startAutomationBtn" class="btn btn-success w-100">Start</button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button id="pauseAutomationBtn" class="btn btn-warning w-100"
+                                        disabled>Pause</button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button id="resumeAutomationBtn" class="btn btn-primary w-100"
+                                        disabled>Resume</button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button id="clearQueueBtn" class="btn btn-danger w-100" disabled>Clear</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stats-box mb-3">
+                            <div class="row">
+                                <div class="col-4 text-center">
+                                    <div class="badge bg-success p-2 w-100">Completed: <span
+                                            id="tasksCompleted">0</span></div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="badge bg-warning text-dark p-2 w-100">Queued: <span
+                                            id="tasksQueued">0</span></div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="badge bg-danger p-2 w-100">Failed: <span id="tasksFailed">0</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="consolePanel" class="console-panel border p-2 bg-dark text-light"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Scrape Village Data</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="scrapeForm">
+                            <div class="mb-3">
+                                <label for="districtCode" class="form-label">District Code</label>
+                                <select class="form-select" id="districtCode" required>
+                                    <option value="">Select District</option>
+                                    <option value="178">अंबेडकर नगर (178)</option>
+                                    <option value="137">अमरोहा (137)</option>
+                                    <option value="177">अयोध्या (177)</option>
+                                    <option value="143">अलीगढ़ (143)</option>
+                                    <option value="146">आगरा (146)</option>
+                                    <option value="191">आजमगढ़ (191)</option>
+                                    <option value="188">गोरखपुर (188)</option>
+                                    <option value="175">प्रयागराज (175)</option>
+                                    <option value="157">लखनऊ (157)</option>
+                                    <option value="197">वाराणसी (197)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="sroCode" class="form-label">SRO Office
+                                    <span class="sro-loader" id="sroLoader"></span>
+                                </label>
+                                <select class="form-select" id="sroCode" required disabled>
+                                    <option value="">Select District First</option>
+                                </select>
+                                <div class="form-text">Sub-Registrar Office options will load based on district
+                                    selection</div>
+                            </div>
+                            <button type="submit" class="btn btn-scrape w-100">Scrape Village Data</button>
+                        </form>
+                        <div class="loader" id="scrapeLoader"></div>
+                        <div id="scrapeResult" class="mt-3"></div>
+                    </div>
+                </div>
+
+
+
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Search Village by Code</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="searchForm">
+                            <div class="mb-3">
+                                <label for="villageCode" class="form-label">Village Code</label>
+                                <input type="text" class="form-control" id="villageCode" placeholder="e.g. 167538"
+                                    required>
+                            </div>
+                            <button type="submit" class="btn btn-info w-100">Search</button>
+                        </form>
+                        <div class="loader" id="searchLoader"></div>
+                        <div id="searchResult" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Display Section -->
+            <div class="col-md-7">
+                <div class="card">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Village Data</h5>
+                        <button id="refreshBtn" class="btn btn-sm btn-light">Refresh</button>
+                    </div>
+                    <div class="card-body">
+                        <div class="search-container">
+                            <div class="row">
+                                <div class="col-md-6 mb-2">
+                                    <select class="form-select" id="filterDistrict">
+                                        <option value="">All Districts</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-2">
+                                    <select class="form-select" id="filterSRO">
+                                        <option value="">All SRO Offices</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="statsContainer" class="stats-box mb-3">
+                            <div class="row">
+                                <div class="col-6">
+                                    <h6>Total Villages: <span id="totalVillages">0</span></h6>
+                                </div>
+                                <div class="col-6">
+                                    <h6>Page: <span id="currentPage">1</span> of <span id="totalPages">1</span></h6>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-container">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Village Code</th>
+                                        <th>Village Name</th>
+                                        <th>District Code</th>
+                                        <th>SRO Code</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="villageTableBody">
+                                    <!-- Village data will be displayed here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="loader" id="tableLoader"></div>
+
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination" id="pagination">
+                                <!-- Pagination links will be added here -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Village Detail Modal -->
+    <div class="modal fade" id="villageModal" tabindex="-1" aria-labelledby="villageModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="villageModalLabel">Village Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="villageDetails">
+                        <!-- Village details will be displayed here -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let currentPage = 1;
+        let totalPages = 1;
+        let limit = 10;
+        let districts = new Set();
+        let sroOffices = new Set();
+        const villageModal = new bootstrap.Modal(document.getElementById('villageModal'));
+
+        // DOM elements
+        const villageTableBody = document.getElementById('villageTableBody');
+        const tableLoader = document.getElementById('tableLoader');
+        const scrapeLoader = document.getElementById('scrapeLoader');
+        const searchLoader = document.getElementById('searchLoader');
+        const paginationElement = document.getElementById('pagination');
+        const totalVillagesElement = document.getElementById('totalVillages');
+        const currentPageElement = document.getElementById('currentPage');
+        const totalPagesElement = document.getElementById('totalPages');
+        const filterDistrict = document.getElementById('filterDistrict');
+        const filterSRO = document.getElementById('filterSRO');
+        const districtSelect = document.getElementById('districtCode');
+        const sroSelect = document.getElementById('sroCode');
+        const sroLoader = document.getElementById('sroLoader');
+
+        // Function to fetch districts from API and populate the select dropdown
+        async function loadDistrictsFromAPI() {
+            const districtSelect = document.getElementById('districtCode');
+
+            // Show loading state
+            districtSelect.disabled = true;
+            districtSelect.innerHTML = '<option value="">Loading districts...</option>';
+
+            try {
+                // Fetch districts from the API
+                const response = await fetch('/district/api/districts');
+                const districts = await response.json();
+
+                // Clear current options and add default option
+                districtSelect.innerHTML = '<option value="">Select District</option>';
+
+                // Sort districts by name if needed
+                // districts.sort((a, b) => a.districtName.localeCompare(b.districtName));
+
+                // Add each district as an option
+                districts.forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district.districtCode;
+                    option.textContent = `${district.districtName} (${district.districtCode})`;
+                    districtSelect.appendChild(option);
+                });
+
+                console.log(`Loaded ${districts.length} districts from API`);
+            } catch (error) {
+                console.error('Error loading districts:', error);
+                districtSelect.innerHTML = '<option value="">Error loading districts</option>';
+            } finally {
+                // Re-enable the select
+                districtSelect.disabled = false;
+            }
+        }
+
+        
+
+        // Fetch SRO offices for a district
+        async function fetchSROOffices(districtCode) {
+            if (!districtCode) {
+                sroSelect.innerHTML = '<option value="">Select District First</option>';
+                sroSelect.disabled = true;
+                return;
+            }
+
+            sroSelect.disabled = true;
+            sroLoader.style.display = 'inline-block';
+
+            try {
+                const response = await fetch(`village/api/sro-offices?districtCode=${districtCode}`);
+                const data = await response.json();
+
+                sroSelect.innerHTML = '';
+
+                if (data.success && data.sroOffices.length > 0) {
+                    data.sroOffices.forEach(sro => {
+                        const option = document.createElement('option');
+                        option.value = sro.code;
+                        option.textContent = `${sro.name} (${sro.code})`;
+                        sroSelect.appendChild(option);
+                    });
+                    sroSelect.disabled = false;
+                } else {
+                    sroSelect.innerHTML = '<option value="">No SRO offices found</option>';
+                }
+            } catch (error) {
+                console.error('Error fetching SRO offices:', error);
+                sroSelect.innerHTML = '<option value="">Error loading SRO offices</option>';
+            } finally {
+                sroLoader.style.display = 'none';
+            }
+        }
+
+        // Fetch villages function
+        async function fetchVillages(page = 1, districtCode = '', sroCode = '') {
+            tableLoader.style.display = 'block';
+            villageTableBody.innerHTML = '';
+
+            try {
+                const response = await fetch(`village/api/villages?page=${page}&limit=${limit}&districtCode=${districtCode}&sroCode=${sroCode}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Update UI
+                    totalVillagesElement.textContent = data.totalVillages;
+                    currentPageElement.textContent = data.currentPage;
+                    totalPagesElement.textContent = data.totalPages;
+                    currentPage = data.currentPage;
+                    totalPages = data.totalPages;
+
+                    // Populate table
+                    if (data.villages.length === 0) {
+                        villageTableBody.innerHTML = '<tr><td colspan="5" class="text-center">No villages found</td></tr>';
+                    } else {
+                        data.villages.forEach(village => {
+                            // Add to district and SRO sets for filters
+                            districts.add(village.districtCode);
+                            sroOffices.add(village.sroCode);
+
+                            // Create table row
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${village.villageCode}</td>
+                                <td>${village.villageName}</td>
+                                <td>${village.districtCode}</td>
+                                <td>${village.sroCode}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary view-btn" data-code="${village.villageCode}">
+                                        View
+                                    </button>
+                                </td>
+                            `;
+                            villageTableBody.appendChild(row);
+                        });
+
+                        // Set up view buttons
+                        document.querySelectorAll('.view-btn').forEach(btn => {
+                            btn.addEventListener('click', () => {
+                                viewVillage(btn.getAttribute('data-code'));
+                            });
+                        });
+                    }
+
+                    // Update pagination
+                    updatePagination();
+
+                    // Update filters if they're empty
+                    updateFilters();
+                } else {
+                    villageTableBody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error: ${data.message}</td></tr>`;
+                }
+            } catch (error) {
+                console.error('Error fetching villages:', error);
+                villageTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error fetching village data</td></tr>';
+            } finally {
+                tableLoader.style.display = 'none';
+            }
+        }
+
+        // Update pagination links
+        function updatePagination() {
+            paginationElement.innerHTML = '';
+
+            // Previous button
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>`;
+            paginationElement.appendChild(prevLi);
+
+            // Page numbers
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, currentPage + 2);
+
+            // Ensure we always show 5 pages if possible
+            if (endPage - startPage + 1 < 5 && totalPages > 5) {
+                if (startPage === 1) {
+                    endPage = Math.min(5, totalPages);
+                } else if (endPage === totalPages) {
+                    startPage = Math.max(1, totalPages - 4);
+                }
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                paginationElement.appendChild(li);
+            }
+
+            // Next button
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>`;
+            paginationElement.appendChild(nextLi);
+
+            // Add event listeners
+            document.querySelectorAll('.page-link').forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = parseInt(e.target.getAttribute('data-page'));
+                    if (page > 0 && page <= totalPages) {
+                        fetchVillages(page, filterDistrict.value, filterSRO.value);
+                    }
+                });
+            });
+        }
+
+        // Update filter dropdowns
+        function updateFilters() {
+            // Only update if empty
+            if (filterDistrict.options.length <= 1) {
+                // Sort the districts
+                const sortedDistricts = Array.from(districts).sort();
+
+                // Clear and re-populate
+                const defaultOption = filterDistrict.options[0];
+                filterDistrict.innerHTML = '';
+                filterDistrict.appendChild(defaultOption);
+
+                sortedDistricts.forEach(district => {
+                    const option = document.createElement('option');
+                    option.value = district;
+                    option.textContent = `District ${district}`;
+                    filterDistrict.appendChild(option);
+                });
+            }
+
+            if (filterSRO.options.length <= 1) {
+                // Sort the SRO codes
+                const sortedSROs = Array.from(sroOffices).sort();
+
+                // Clear and re-populate
+                const defaultOption = filterSRO.options[0];
+                filterSRO.innerHTML = '';
+                filterSRO.appendChild(defaultOption);
+
+                sortedSROs.forEach(sro => {
+                    const option = document.createElement('option');
+                    option.value = sro;
+                    option.textContent = `SRO ${sro}`;
+                    filterSRO.appendChild(option);
+                });
+            }
+        }
+
+        // View village details
+        async function viewVillage(code) {
+            const villageDetails = document.getElementById('villageDetails');
+            villageDetails.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+
+            try {
+                const response = await fetch(`village/api/villages/${code}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const village = data.village;
+                    const formattedDate = new Date(village.scrapedAt).toLocaleString();
+
+                    villageDetails.innerHTML = `
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">${village.villageName}</h5>
+                                <p class="card-text"><strong>Village Code:</strong> ${village.villageCode}</p>
+                                <p class="card-text"><strong>District Code:</strong> ${village.districtCode}</p>
+                                <p class="card-text"><strong>SRO Code:</strong> ${village.sroCode}</p>
+                                <p class="card-text"><strong>Last Updated:</strong> ${formattedDate}</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    villageDetails.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Error fetching village details:', error);
+                villageDetails.innerHTML = '<div class="alert alert-danger">Error loading village details</div>';
+            }
+
+            villageModal.show();
+        }
+
+        // Scrape villages function
+        async function scrapeVillages(districtCode, sroCode) {
+            scrapeLoader.style.display = 'block';
+            const scrapeResult = document.getElementById('scrapeResult');
+            scrapeResult.innerHTML = '';
+
+            try {
+                const response = await fetch(`village/api/scrape-villages?districtCode=${districtCode}&sroCode=${sroCode}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    scrapeResult.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5>Success!</h5>
+                            <p>Processed ${data.villages.length} villages</p>
+                            <p>Added: ${data.stats.upserted}, Updated: ${data.stats.modified}</p>
+                        </div>
+                    `;
+
+                    // Refresh the village list
+                    fetchVillages(1, districtCode, sroCode);
+                } else {
+                    scrapeResult.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Error scraping villages:', error);
+                scrapeResult.innerHTML = '<div class="alert alert-danger">Error during scraping process</div>';
+            } finally {
+                scrapeLoader.style.display = 'none';
+            }
+        }
+
+        // Search village by code
+        async function searchVillage(code) {
+            searchLoader.style.display = 'block';
+            const searchResult = document.getElementById('searchResult');
+            searchResult.innerHTML = '';
+
+            try {
+                const response = await fetch(`village/api/villages/${code}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    const village = data.village;
+                    const formattedDate = new Date(village.scrapedAt).toLocaleString();
+
+                    searchResult.innerHTML = `
+                        <div class="alert alert-success">
+                            <h5>${village.villageName}</h5>
+                            <p><strong>Village Code:</strong> ${village.villageCode}</p>
+                            <p><strong>District:</strong> ${village.districtCode}</p>
+                            <p><strong>SRO:</strong> ${village.sroCode}</p>
+                            <p><strong>Last Updated:</strong> ${formattedDate}</p>
+                        </div>
+                    `;
+                } else {
+                    searchResult.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                }
+            } catch (error) {
+                console.error('Error searching village:', error);
+                searchResult.innerHTML = '<div class="alert alert-danger">Error searching for village</div>';
+            } finally {
+                searchLoader.style.display = 'none';
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // Load districts from API - add this line
+            loadDistrictsFromAPI();
+
+            // Initial data load
+            fetchVillages();
+
+            // District change event to fetch SRO offices
+            districtSelect.addEventListener('change', () => {
+                const districtCode = districtSelect.value;
+                fetchSROOffices(districtCode);
+            });
+
+            // Scrape form submission
+            document.getElementById('scrapeForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const districtCode = document.getElementById('districtCode').value;
+                const sroCode = document.getElementById('sroCode').value;
+
+                if (districtCode && sroCode) {
+                    scrapeVillages(districtCode, sroCode);
+                }
+            });
+
+            // Search form submission
+            document.getElementById('searchForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const villageCode = document.getElementById('villageCode').value;
+
+                if (villageCode) {
+                    searchVillage(villageCode);
+                }
+            });
+
+            // Refresh button
+            document.getElementById('refreshBtn').addEventListener('click', () => {
+                fetchVillages(currentPage, filterDistrict.value, filterSRO.value);
+            });
+
+            // Filter change events
+            filterDistrict.addEventListener('change', () => {
+                fetchVillages(1, filterDistrict.value, filterSRO.value);
+            });
+
+            filterSRO.addEventListener('change', () => {
+                fetchVillages(1, filterDistrict.value, filterSRO.value);
+            });
+        });
+
+
+        // automation Script 
+        // Automated Village Data Scraping Script for hierarchical schema
+        // This script will iterate through all districts and their SRO offices
+        // to automatically scrape and save village data
+
+        // Queue to manage district and SRO scraping tasks
+        class ScrapingQueue {
+            constructor() {
+                this.queue = [];
+                this.isProcessing = false;
+                this.currentTask = null;
+                this.districtMap = new Map(); // Store district names for reporting
+            }
+
+            addTask(districtCode, districtName, sroCode = null, sroName = null) {
+                this.queue.push({
+                    districtCode,
+                    districtName,
+                    sroCode,
+                    sroName,
+                    status: 'queued',
+                    timestamp: new Date()
+                });
+
+                // Store district name in map for later reference
+                if (districtName) {
+                    this.districtMap.set(districtCode, districtName);
+                }
+
+                this.logToConsole(`Added task: District ${districtName || districtCode}${sroCode ? `, SRO ${sroName || sroCode}` : ''}`);
+
+                // Start processing if not already running
+                if (!this.isProcessing) {
+                    this.processNext();
+                }
+            }
+
+            async processNext() {
+                if (this.queue.length === 0) {
+                    this.isProcessing = false;
+                    this.logToConsole('✅ All scraping tasks completed!', 'success');
+                    return;
+                }
+
+                this.isProcessing = true;
+                this.currentTask = this.queue.shift();
+                this.currentTask.status = 'processing';
+
+                try {
+                    // If we have an SRO code, scrape villages for this district+SRO combination
+                    if (this.currentTask.sroCode) {
+                        const districtName = this.currentTask.districtName || this.districtMap.get(this.currentTask.districtCode) || this.currentTask.districtCode;
+
+                        this.logToConsole(
+                            `⏳ Scraping villages for District ${districtName} (${this.currentTask.districtCode}), SRO ${this.currentTask.sroName || this.currentTask.sroCode} (${this.currentTask.sroCode})...`,
+                            'info'
+                        );
+
+                        // Call API to scrape villages
+                        const response = await fetch(`village/api/scrape-villages?districtCode=${this.currentTask.districtCode}&sroCode=${this.currentTask.sroCode}`);
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.currentTask.status = 'completed';
+                            this.logToConsole(
+                                `✅ Completed: District ${districtName} (${this.currentTask.districtCode}), SRO ${this.currentTask.sroName || this.currentTask.sroCode} (${this.currentTask.sroCode}) - Processed ${data.villages.length} villages`,
+                                'success'
+                            );
+                        } else {
+                            this.currentTask.status = 'failed';
+                            this.logToConsole(
+                                `❌ Failed: District ${districtName} (${this.currentTask.districtCode}), SRO ${this.currentTask.sroName || this.currentTask.sroCode} (${this.currentTask.sroCode}) - ${data.message}`,
+                                'error'
+                            );
+                        }
+                    }
+                    // If we only have a district code, fetch all SRO offices and queue them
+                    else {
+                        const districtName = this.currentTask.districtName || this.districtMap.get(this.currentTask.districtCode) || this.currentTask.districtCode;
+
+                        this.logToConsole(
+                            `🔍 Fetching SRO offices for District ${districtName} (${this.currentTask.districtCode})...`,
+                            'info'
+                        );
+
+                        // Call API to get SRO offices
+                        const response = await fetch(`village/api/sro-offices?districtCode=${this.currentTask.districtCode}`);
+                        const data = await response.json();
+
+                        if (data.success && data.sroOffices.length > 0) {
+                            this.currentTask.status = 'completed';
+                            this.logToConsole(
+                                `✅ Found ${data.sroOffices.length} SRO offices for District ${districtName} (${this.currentTask.districtCode})`,
+                                'success'
+                            );
+
+                            // Add each SRO office to the queue
+                            data.sroOffices.forEach(sro => {
+                                this.addTask(this.currentTask.districtCode, districtName, sro.code, sro.name);
+                            });
+                        } else {
+                            this.currentTask.status = 'failed';
+                            this.logToConsole(
+                                `❌ Failed to fetch SRO offices for District ${districtName} (${this.currentTask.districtCode})`,
+                                'error'
+                            );
+                        }
+                    }
+                } catch (error) {
+                    this.currentTask.status = 'failed';
+                    this.logToConsole(
+                        `❌ Error: ${error.message}`,
+                        'error'
+                    );
+                }
+
+                // Process next task after a short delay (to avoid overwhelming the server)
+                setTimeout(() => this.processNext(), 2000);
+            }
+
+            logToConsole(message, level = 'info') {
+                const consolePanel = document.getElementById('consolePanel');
+                const timestamp = new Date().toLocaleTimeString();
+
+                const entry = document.createElement('div');
+                entry.className = `console-entry console-${level}`;
+                entry.innerHTML = `<span class="console-timestamp">[${timestamp}]</span> ${message}`;
+
+                consolePanel.appendChild(entry);
+
+                // Auto-scroll to bottom
+                consolePanel.scrollTop = consolePanel.scrollHeight;
+
+                // Also update summary statistics
+                this.updateStats();
+            }
+
+            updateStats() {
+                const completed = document.getElementById('tasksCompleted');
+                const queued = document.getElementById('tasksQueued');
+                const failed = document.getElementById('tasksFailed');
+
+                const stats = {
+                    completed: 0,
+                    queued: this.queue.length,
+                    failed: 0
+                };
+
+                // Count completed and failed tasks
+                document.querySelectorAll('.console-entry').forEach(entry => {
+                    if (entry.classList.contains('console-success') && entry.textContent.includes('Completed:')) {
+                        stats.completed++;
+                    } else if (entry.classList.contains('console-error') && entry.textContent.includes('Failed:')) {
+                        stats.failed++;
+                    }
+                });
+
+                completed.textContent = stats.completed;
+                queued.textContent = stats.queued;
+                failed.textContent = stats.failed;
+            }
+
+            pause() {
+                if (this.isProcessing) {
+                    this.isProcessing = false;
+                    this.queue.unshift(this.currentTask);
+                    this.currentTask = null;
+                    this.logToConsole('⏸️ Scraping paused', 'warning');
+                }
+            }
+
+            resume() {
+                if (!this.isProcessing && this.queue.length > 0) {
+                    this.logToConsole('▶️ Scraping resumed', 'info');
+                    this.processNext();
+                }
+            }
+
+            clear() {
+                this.queue = [];
+                this.logToConsole('🗑️ Queue cleared', 'warning');
+                this.updateStats();
+            }
+        }
+
+        // Global scraping queue instance
+        const scrapingQueue = new ScrapingQueue();
+
+        // Function to start scraping for all districts
+        function startAutomatedScraping() {
+            // Get all district options
+            const districtSelect = document.getElementById('districtCode');
+            const options = Array.from(districtSelect.options);
+
+            // Skip the first "Select District" option
+            options.slice(1).forEach(option => {
+                const districtCode = option.value;
+                const districtName = option.textContent;
+                if (districtCode) {
+                    scrapingQueue.addTask(districtCode, districtName);
+                }
+            });
+
+            // Update UI buttons
+            document.getElementById('startAutomationBtn').disabled = true;
+            document.getElementById('pauseAutomationBtn').disabled = false;
+            document.getElementById('resumeAutomationBtn').disabled = true;
+            document.getElementById('clearQueueBtn').disabled = false;
+        }
+
+        // Initialize automation control event listeners
+        function initializeAutomationControls() {
+            document.getElementById('startAutomationBtn').addEventListener('click', startAutomatedScraping);
+
+            document.getElementById('pauseAutomationBtn').addEventListener('click', () => {
+                scrapingQueue.pause();
+                document.getElementById('pauseAutomationBtn').disabled = true;
+                document.getElementById('resumeAutomationBtn').disabled = false;
+            });
+
+            document.getElementById('resumeAutomationBtn').addEventListener('click', () => {
+                scrapingQueue.resume();
+                document.getElementById('pauseAutomationBtn').disabled = false;
+                document.getElementById('resumeAutomationBtn').disabled = true;
+            });
+
+            document.getElementById('clearQueueBtn').addEventListener('click', () => {
+                scrapingQueue.clear();
+                document.getElementById('startAutomationBtn').disabled = false;
+                document.getElementById('pauseAutomationBtn').disabled = true;
+                document.getElementById('resumeAutomationBtn').disabled = true;
+                document.getElementById('clearQueueBtn').disabled = true;
+            });
+        }
+
+        // Call this function when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeAutomationControls();
+        });
+
+    </script>
+</body>
+
+</html>
