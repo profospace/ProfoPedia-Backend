@@ -296,7 +296,7 @@ const { db2 } = require('../database/db');
 const partySchema = new mongoose.Schema({
     name: {
         type: String,
-        required: true,
+        // required: true,
         trim: true
     },
     parentName: {

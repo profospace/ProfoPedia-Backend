@@ -218,9 +218,10 @@ const FailedDeed = require('../models/FailedDeedSchema');
 const Deed = require('../models/deedSchema');
 const logger = require('../utils/logger');
 const { base_url } = require('../utils/base_url');
+const deedController = require('../controllers/propertyDetail-controller');
 
 // exports.fetchDeedsInBatches = async (req, res) => {
-    
+
 //     try {
 //         const batchSize = parseInt(req.query.batchSize) || 10; // Default batch size 10
 //         const startPage = parseInt(req.query.page) || 0; // For pagination
@@ -500,6 +501,7 @@ exports.fetchDeedsInBatches = async (req, res) => {
                         return { success: false, recordId: propertyRecord._id, message: 'No property records' };
                     }
 
+
                     // Process each property record item
                     const itemResults = await Promise.all(
                         propertyRecord.propertyRecords.map(async (item) => {
@@ -510,6 +512,7 @@ exports.fetchDeedsInBatches = async (req, res) => {
                                     return { success: false, itemId: item._id, message: 'Missing required details' };
                                 }
 
+                                console.log("propertyRecords", propertyRecords)
                                 // Prepare the request body for fetchPropertyDetail API
                                 const requestBody = {
                                     dcode: item.details.dcode,
@@ -526,13 +529,28 @@ exports.fetchDeedsInBatches = async (req, res) => {
                                 logger.log(`Calling fetchPropertyDetail for record ${item.recordUniqueId || 'unknown'}`);
 
                                 // Call the fetchPropertyDetail API
-                                const response = await axios.post(
-                                    `${base_url}/deeds/property-records/fetch-detail`,
-                                    requestBody
+                                // const response = await axios.post(
+                                //     `${base_url}/deeds/property-records/fetch-detail`,
+                                //     requestBody
+                                // );
+
+
+                                // With a direct function call:
+                                // Adjust path as needed
+                                const response = await deedController.fetchPropertyDetail(
+                                    { body: requestBody },
+                                    {
+                                        status: () => ({
+                                            json: (data) => data
+                                        })
+                                    }
                                 );
 
+                                console.log("itemitem", item)
+
+                                console.log("responseDataCheck", response)
                                 // Check if deed data was successfully received
-                                if (response.data && response.data.success) {
+                                if (response.success) {
                                     logger.log(`Successfully fetched deed for ${item.recordUniqueId || 'unknown'}`);
                                     successCount++;
                                     return { success: true, itemId: item._id };
@@ -548,10 +566,14 @@ exports.fetchDeedsInBatches = async (req, res) => {
                                         regyear: requestBody.regyear,
                                         srocode: requestBody.srocode,
                                         recordUniqueId: item.recordUniqueId,
+                                        districtCode: propertyRecords?.[0].districtCode,
+                                        gaonCode1: propertyRecords?.[0].gaonCode1,
+                                        // propNEWAddress: propNEWAddress && item.propNEWAddress,
                                         errorMessage: 'No deed data found',
                                         status: 'FAILED'
                                     });
 
+                                    console.log("failedDeed", failedDeed)
                                     await failedDeed.save();
 
                                     logger.log(`No deed data found for ${item.recordUniqueId || 'unknown'}, marked as deedPresent=0`);

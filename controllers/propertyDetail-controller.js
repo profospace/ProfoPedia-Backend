@@ -261,10 +261,19 @@ exports.fetchPropertyDetail = async (req, res) => {
         });
 
         console.log("Deed to be saved:", deed);
-
+        
         // Save to database
         const savedDeed = await deed.save();
 
+        console.log("Deed savedDeed=======>:", savedDeed);
+        
+        return {
+            success: true,
+            message: 'Deed uploaded and saved successfully',
+            data: savedDeed,
+            htmlPath: filePath
+        }
+        
         res.status(201).json({
             success: true,
             message: 'Deed uploaded and saved successfully',
@@ -274,7 +283,12 @@ exports.fetchPropertyDetail = async (req, res) => {
 
     } catch (error) {
         console.error('Error processing deed upload:', error);
+        return {
+            success: false,
+            message: 'Failed to process deed',
+            error: error.message
 
+        }
         res.status(500).json({
             success: false,
             message: 'Failed to process deed',

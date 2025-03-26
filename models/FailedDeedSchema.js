@@ -8,6 +8,9 @@ const FailedDeedSchema = new mongoose.Schema({
     regyear: { type: String },
     srocode: { type: String },
     recordUniqueId: { type: String },
+    districtCode: { type: String },
+    gaonCode1: { type: String },
+    propNEWAddress: { type: String },
     errorMessage: { type: String },
     status: { type: String, default: 'FAILED' },
     failedAt: { type: Date, default: Date.now }
