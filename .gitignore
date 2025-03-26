@@ -10,6 +10,8 @@ lerna-debug.log*
 logger.txt
 ./logger.txt
 ./logger.txt/*
+uploads
+./uploads/*
 node_modules
 dist
 dist-ssr

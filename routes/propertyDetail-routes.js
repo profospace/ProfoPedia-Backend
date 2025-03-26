@@ -4,7 +4,8 @@ const propertyDetailController = require('../controllers/propertyDetail-controll
 const Deed = require('../models/deedSchema');
 const json2csv = require('json2csv').Parser;
 const fs = require('fs');
-const path = require('path')
+const path = require('path');
+const District = require('../models/districtSchema');
 
 // Route to fetch and save property detail
 router.post('/property-records/fetch-detail', propertyDetailController.fetchPropertyDetail);
@@ -110,7 +111,7 @@ router.get('/get-all-deeds', async (req, res) => {
     try {
         // Extract pagination parameters
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 20;
+        const limit = parseInt(req.query.limit) ;
         const skip = (page - 1) * limit;
 
         // Parse sort parameter
@@ -266,19 +267,46 @@ router.get('/get-all-deeds', async (req, res) => {
  * GET /districts
  * Get all unique districts for filtering
  */
+// router.get('/get/districts', async (req, res) => {
+//     try {
+//         const districts = await Deed.distinct('district');
+
+//         // Filter out null or empty values
+//         const filteredDistricts = districts.filter(district => district && district.trim() !== '');
+
+//         // Sort alphabetically
+//         filteredDistricts.sort();
+
+//         res.json({
+//             status: 'success',
+//             data: filteredDistricts
+//         });
+//     } catch (error) {
+//         console.error('Error fetching districts:', error);
+//         res.status(500).json({
+//             status: 'error',
+//             message: 'Server error while fetching districts',
+//             error: error.message
+//         });
+//     }
+// });
+
 router.get('/get/districts', async (req, res) => {
     try {
-        const districts = await Deed.distinct('district');
+        // Fetch districts from the District collection instead
+        const districts = await District.find({}, { districtName: 1, _id: 0 });
 
-        // Filter out null or empty values
-        const filteredDistricts = districts.filter(district => district && district.trim() !== '');
+        // Extract just the district names
+        const districtNames = districts
+            .map(district => district.districtName)
+            .filter(name => name && name.trim() !== ''); // Filter out null or empty values
 
         // Sort alphabetically
-        filteredDistricts.sort();
+        districtNames.sort();
 
         res.json({
             status: 'success',
-            data: filteredDistricts
+            data: districtNames
         });
     } catch (error) {
         console.error('Error fetching districts:', error);

@@ -1,132 +1,18 @@
-=== BATCH PROCESSING STARTED AT 2025-03-24T13:02:42.004Z ===
-[2025-03-24T13:02:42.791Z] Starting batch processing of property deeds...
-[2025-03-24T13:02:42.792Z] Batch size: 10
-[2025-03-24T13:02:42.805Z] Starting from page: 1
-[2025-03-24T13:02:42.808Z] API URL: http://localhost:8000/api/deeds/processDeeds
-[2025-03-24T13:02:42.876Z] Processing batch 1...
-[2025-03-24T13:02:44.504Z] Batch 1 processed. Success: 36, Failed: 79
-[2025-03-24T13:02:47.724Z] Next batch: 2
-[2025-03-24T13:02:49.972Z] Processing batch 2...
-[2025-03-24T13:02:57.467Z] Batch 1 processed. Success: 36, Failed: 79
-[2025-03-24T13:03:03.043Z] Next batch: 2
-[2025-03-24T13:03:03.148Z] Batch 2 processed. Success: 31, Failed: 496
-[2025-03-24T13:03:03.228Z] Next batch: 3
-[2025-03-24T13:03:05.054Z] Processing batch 2...
-[2025-03-24T13:03:05.243Z] Processing batch 3...
-[2025-03-24T13:03:56.375Z] Batch 3 processed. Success: 0, Failed: 2066
-[2025-03-24T13:03:56.477Z] Next batch: 4
-[2025-03-24T13:03:56.572Z] Batch 2 processed. Success: 80, Failed: 447
-[2025-03-24T13:03:56.648Z] Next batch: 3
-[2025-03-24T13:03:58.483Z] Processing batch 4...
-[2025-03-24T13:03:58.684Z] Processing batch 3...
-[2025-03-24T13:05:10.223Z] Batch 4 processed. Success: 0, Failed: 4078
-[2025-03-24T13:05:21.708Z] Next batch: 5
-[2025-03-24T13:05:22.477Z] Batch 3 processed. Success: 0, Failed: 2066
-[2025-03-24T13:05:22.565Z] Next batch: 4
-[2025-03-24T13:05:23.719Z] Processing batch 5...
-[2025-03-24T13:05:24.576Z] Processing batch 4...
-[2025-03-24T13:06:52.430Z] Batch 4 processed. Success: 0, Failed: 4078
-[2025-03-24T13:07:07.517Z] Next batch: 5
-[2025-03-24T13:07:08.542Z] Batch 5 processed. Success: 0, Failed: 2425
-[2025-03-24T13:07:08.676Z] Next batch: 6
-[2025-03-24T13:07:09.525Z] Processing batch 5...
-[2025-03-24T13:07:10.677Z] Processing batch 6...
-[2025-03-24T13:08:05.743Z] Batch 5 processed. Success: 0, Failed: 2425
-[2025-03-24T13:08:28.921Z] Next batch: 6
-[2025-03-24T13:08:29.834Z] Batch 6 processed. Success: 0, Failed: 2825
-[2025-03-24T13:08:29.916Z] Next batch: 7
-[2025-03-24T13:08:30.933Z] Processing batch 6...
-[2025-03-24T13:08:31.918Z] Processing batch 7...
-[2025-03-24T13:09:31.914Z] Batch 7 processed. Success: 0, Failed: 2528
-[2025-03-24T13:09:52.228Z] Next batch: 8
-[2025-03-24T13:09:53.295Z] Batch 6 processed. Success: 0, Failed: 2825
-[2025-03-24T13:09:53.377Z] Next batch: 7
-[2025-03-24T13:09:54.229Z] Processing batch 8...
-[2025-03-24T13:09:58.077Z] Processing batch 7...
-[2025-03-24T13:10:00.370Z] Error processing batch 7: 
-[2025-03-24T13:10:00.374Z] Error fetching statistics: 
-[2025-03-24T13:10:25.834Z] Stopping batch processing due to error.
-[2025-03-24T13:10:25.835Z] Batch processing completed.
-[2025-03-24T13:10:25.836Z] Total batches processed: 6
-[2025-03-24T13:10:26.434Z] Batch 8 processed. Success: 80, Failed: 1098
-[2025-03-24T13:10:26.547Z] Next batch: 9
-[2025-03-24T13:10:26.811Z] Final processing statistics:
-[2025-03-24T13:10:26.814Z] {
-  "totalRecords": 1799,
-  "totalPropertyItems": 422826,
-  "totalProcessed": 32599,
-  "successfulDeeds": 0,
-  "failedDeeds": 32599,
-  "notProcessedDeeds": 390227,
-  "recordsWithAtLeastOneProcessed": 217,
-  "failedDeedsCount": 27712,
-  "remainingToProcess": 390227
-}
-[2025-03-24T13:10:26.911Z] === BATCH PROCESSING FINISHED AT 2025-03-24T13:10:26.911Z ===
-[2025-03-24T13:10:28.560Z] Processing batch 9...
-[2025-03-24T13:11:17.477Z] Batch 9 processed. Success: 0, Failed: 2082
-[2025-03-24T13:11:17.548Z] Next batch: 10
-[2025-03-24T13:11:19.559Z] Processing batch 10...
-[2025-03-24T13:11:35.117Z] Batch 10 processed. Success: 0, Failed: 749
-[2025-03-24T13:11:35.198Z] Next batch: 11
-[2025-03-24T13:11:37.202Z] Processing batch 11...
-[2025-03-24T13:12:06.015Z] Batch 11 processed. Success: 0, Failed: 1374
-[2025-03-24T13:12:06.116Z] Next batch: 12
-[2025-03-24T13:12:08.126Z] Processing batch 12...
-[2025-03-24T13:12:33.844Z] Batch 12 processed. Success: 0, Failed: 1107
-[2025-03-24T13:12:33.952Z] Next batch: 13
-[2025-03-24T13:12:35.992Z] Processing batch 13...
-[2025-03-24T13:13:13.780Z] Batch 13 processed. Success: 0, Failed: 1507
-[2025-03-24T13:13:13.933Z] Next batch: 14
-[2025-03-24T13:13:15.972Z] Processing batch 14...
-[2025-03-24T13:13:50.667Z] Batch 14 processed. Success: 130, Failed: 686
-[2025-03-24T13:13:50.758Z] Next batch: 15
-[2025-03-24T13:13:52.774Z] Processing batch 15...
-[2025-03-24T13:14:18.118Z] Batch 15 processed. Success: 79, Failed: 281
-[2025-03-24T13:14:18.247Z] Next batch: 16
-[2025-03-24T13:14:20.247Z] Processing batch 16...
-[2025-03-24T13:14:56.442Z] Batch 16 processed. Success: 0, Failed: 1636
-[2025-03-24T13:14:56.528Z] Next batch: 17
-[2025-03-24T13:14:58.540Z] Processing batch 17...
-[2025-03-24T13:15:26.288Z] Batch 17 processed. Success: 101, Failed: 521
-[2025-03-24T13:15:26.376Z] Next batch: 18
-[2025-03-24T13:15:28.416Z] Processing batch 18...
-[2025-03-24T13:16:10.978Z] Batch 18 processed. Success: 0, Failed: 1637
-[2025-03-24T13:16:11.123Z] Next batch: 19
-[2025-03-24T13:16:13.170Z] Processing batch 19...
-[2025-03-24T13:16:35.630Z] Batch 19 processed. Success: 0, Failed: 761
-[2025-03-24T13:16:35.705Z] Next batch: 20
-[2025-03-24T13:16:37.708Z] Processing batch 20...
-[2025-03-24T13:16:58.614Z] Batch 20 processed. Success: 5, Failed: 1048
-[2025-03-24T13:16:58.698Z] Next batch: 21
-[2025-03-24T13:17:00.709Z] Processing batch 21...
-[2025-03-24T13:18:11.901Z] Batch 21 processed. Success: 0, Failed: 3104
-[2025-03-24T13:18:11.978Z] Next batch: 22
-[2025-03-24T13:18:13.984Z] Processing batch 22...
-[2025-03-24T13:18:48.417Z] Batch 22 processed. Success: 0, Failed: 1362
-[2025-03-24T13:18:48.484Z] Next batch: 23
-[2025-03-24T13:18:50.492Z] Processing batch 23...
-[2025-03-24T13:20:20.556Z] Batch 23 processed. Success: 0, Failed: 3890
-[2025-03-24T13:20:20.676Z] Next batch: 24
-[2025-03-24T13:20:22.689Z] Processing batch 24...
-[2025-03-24T13:21:22.131Z] Batch 24 processed. Success: 0, Failed: 3046
-[2025-03-24T13:21:22.206Z] Next batch: 25
-[2025-03-24T13:21:24.220Z] Processing batch 25...
-[2025-03-24T13:21:41.179Z] Batch 25 processed. Success: 0, Failed: 714
-[2025-03-24T13:21:41.276Z] Next batch: 26
-[2025-03-24T13:21:43.291Z] Processing batch 26...
-[2025-03-24T13:22:12.820Z] Batch 26 processed. Success: 0, Failed: 1313
-[2025-03-24T13:22:12.925Z] Next batch: 27
-[2025-03-24T13:22:14.976Z] Processing batch 27...
-[2025-03-24T13:22:49.614Z] Batch 27 processed. Success: 0, Failed: 2224
-[2025-03-24T13:22:49.685Z] Next batch: 28
-[2025-03-24T13:22:51.693Z] Processing batch 28...
-[2025-03-24T13:24:05.520Z] Batch 28 processed. Success: 0, Failed: 2805
-[2025-03-24T13:24:05.629Z] Next batch: 29
-[2025-03-24T13:24:07.642Z] Processing batch 29...
-[2025-03-24T13:27:44.222Z] Batch 29 processed. Success: 0, Failed: 4965
-[2025-03-24T13:27:44.309Z] Next batch: 30
-[2025-03-24T13:27:46.322Z] Processing batch 30...
-[2025-03-24T13:29:13.759Z] Batch 30 processed. Success: 0, Failed: 3006
-[2025-03-24T13:29:13.839Z] Next batch: 31
-[2025-03-24T13:29:15.853Z] Processing batch 31...
+=== BATCH PROCESSING STARTED AT 2025-03-26T07:18:19.273Z ===
+[2025-03-26T07:18:19.282Z] Starting batch processing of property deeds...
+[2025-03-26T07:18:19.283Z] Batch size: 10
+[2025-03-26T07:18:19.283Z] Starting from page: 26
+[2025-03-26T07:18:19.283Z] API URL: http://localhost:8000/api/deeds/processDeeds
+[2025-03-26T07:18:19.283Z] Processing batch 26...
+[2025-03-26T07:19:32.911Z] Batch 26 processed. Success: 0, Failed: 15075
+[2025-03-26T07:19:32.915Z] Next batch: 27
+[2025-03-26T07:19:34.925Z] Processing batch 27...
+[2025-03-26T07:19:39.902Z] Batch 27 processed. Success: 5, Failed: 85
+[2025-03-26T07:19:39.904Z] Next batch: 28
+[2025-03-26T07:19:41.913Z] Processing batch 28...
+[2025-03-26T07:19:44.929Z] Batch 28 processed. Success: 13, Failed: 80
+[2025-03-26T07:19:44.932Z] Next batch: 29
+[2025-03-26T07:19:46.942Z] Processing batch 29...
+[2025-03-26T07:20:14.499Z] Batch 29 processed. Success: 1, Failed: 4812
+[2025-03-26T07:20:14.502Z] Next batch: 30
+[2025-03-26T07:20:16.510Z] Processing batch 30...
