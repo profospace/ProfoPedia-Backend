@@ -200,6 +200,7 @@ if (require.main === module) {
             }
 
             await processAllBatches(startPage);
+
         } catch (error) {
             log(`Fatal error in batch processing: ${error.message}`);
             process.exit(1);

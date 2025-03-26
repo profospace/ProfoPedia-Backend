@@ -191,6 +191,7 @@ exports.fetchPropertyDetail = async (req, res) => {
 
         console.log(`Making request to https://igrsup.gov.in/igrsup/propertySearchViewDetail with parameters: ${formData.toString()}`);
 
+
         // Make the HTTP request to external API
         const response = await axios.post('https://igrsup.gov.in/igrsup/propertySearchViewDetail', formData, {
             headers: {
@@ -206,6 +207,7 @@ exports.fetchPropertyDetail = async (req, res) => {
             maxRedirects: 5,
         });
 
+        console.log("first", response)
         console.log("formData", formData)
         if (response.status !== 200) {
             console.error(`Error: API returned status code ${response.status}`);
@@ -213,11 +215,15 @@ exports.fetchPropertyDetail = async (req, res) => {
                 success: false,
                 message: `External API returned status code ${response.status}`
             });
+        }else{
+            console.log("No error means staus 200")
         }
-
+        console.log("second")
+        
         // Get HTML content
         const html = response.data;
         console.log("HTML content received.");
+        console.log("third")
 
         // Define path and file name
         const uploadDir = path.join(__dirname, '../uploads');

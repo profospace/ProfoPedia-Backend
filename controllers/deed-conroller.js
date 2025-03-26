@@ -546,7 +546,7 @@ exports.fetchDeedsInBatches = async (req, res) => {
                                     }
                                 );
 
-                                console.log("itemitem", item)
+                                console.log("itemitem==================", item)
 
                                 console.log("responseDataCheck", response)
                                 // Check if deed data was successfully received
@@ -723,6 +723,8 @@ exports.getProcessingStats = async (req, res) => {
                 }
             }
         ]);
+
+        console.log("recordStats", recordStats)
 
         // Process the aggregation results
         let successfulDeeds = 0;
