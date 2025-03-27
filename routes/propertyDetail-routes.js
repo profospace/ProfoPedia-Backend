@@ -6,6 +6,7 @@ const json2csv = require('json2csv').Parser;
 const fs = require('fs');
 const path = require('path');
 const District = require('../models/districtSchema');
+const Village = require('../models/villageSchema');
 
 // Route to fetch and save property detail
 router.post('/property-records/fetch-detail', propertyDetailController.fetchPropertyDetail);
@@ -108,6 +109,7 @@ router.post('/property-records/fetch-detail', propertyDetailController.fetchProp
 // });
 
 router.get('/get-all-deeds', async (req, res) => {
+    console.log(req.query)
     try {
         // Extract pagination parameters
         const page = parseInt(req.query.page) || 1;
@@ -146,9 +148,9 @@ router.get('/get-all-deeds', async (req, res) => {
             query.deedType = req.query.deedType;
         }
 
-        // Filter by district
+        // Filter by district , where district = code of district 
         if (req.query.district) {
-            query.district = req.query.district;
+            query.dcode = req.query.district;
         }
 
         // Filter by year
@@ -232,6 +234,7 @@ router.get('/get-all-deeds', async (req, res) => {
         if (req.query.ward) {
             query.ward = req.query.ward;
         }
+        
 
         // Execute query with pagination
         const deeds = await Deed.find(query)
@@ -242,10 +245,13 @@ router.get('/get-all-deeds', async (req, res) => {
         // Get total count for pagination
         const total = await Deed.countDocuments(query);
 
+        console.log("total", total)
+
         // Calculate total pages
         const pages = Math.ceil(total / limit);
 
         res.json({
+            
             status: 'success',
             pages,
             total,
@@ -291,22 +297,91 @@ router.get('/get-all-deeds', async (req, res) => {
 //     }
 // });
 
+// router.get('/get/districts', async (req, res) => {
+//     try {
+//         // Fetch districts from the District collection instead
+//         const districts = await District.find({}, { districtName: 1, _id: 0 });
+
+//         // Extract just the district names
+//         const districtNames = districts
+//             .map(district => district.districtName)
+//             .filter(name => name && name.trim() !== ''); // Filter out null or empty values
+
+//         // Sort alphabetically
+//         districtNames.sort();
+
+//         res.json({
+//             status: 'success',
+//             data: districtNames
+//         });
+//     } catch (error) {
+//         console.error('Error fetching districts:', error);
+//         res.status(500).json({
+//             status: 'error',
+//             message: 'Server error while fetching districts',
+//             error: error.message
+//         });
+//     }
+// });
+
+// router.get('/get/districts', async (req, res) => {
+//     try {
+//         // Use the Village model which is actually using the districtSchema
+//         const districts = await Village.find({}, { districtName: 1, _id: 0 });
+
+//         // Extract just the district names
+//         const districtNames = districts
+//             .map(district => district.districtName)
+//             .filter(name => name && name.trim() !== ''); // Filter out null or empty values
+
+//         // Remove duplicates
+//         const uniqueDistrictNames = [...new Set(districtNames)];
+
+//         // Sort alphabetically
+//         uniqueDistrictNames.sort();
+
+//         res.json({
+//             status: 'success',
+//             data: uniqueDistrictNames
+//         });
+//     } catch (error) {
+//         console.error('Error fetching districts:', error);
+//         res.status(500).json({
+//             status: 'error',
+//             message: 'Server error while fetching districts',
+//             error: error.message
+//         });
+//     }
+// });
+
 router.get('/get/districts', async (req, res) => {
     try {
-        // Fetch districts from the District collection instead
-        const districts = await District.find({}, { districtName: 1, _id: 0 });
+        // Query for both districtName and districtCode
+        const districts = await Village.find({}, { districtName: 1, districtCode: 1, _id: 0 });
 
-        // Extract just the district names
-        const districtNames = districts
-            .map(district => district.districtName)
-            .filter(name => name && name.trim() !== ''); // Filter out null or empty values
+        // Create an array of objects with both code and name
+        const districtData = districts
+            .filter(district => district.districtName && district.districtName.trim() !== '')
+            .map(district => ({
+                code: district.districtCode,
+                name: district.districtName
+            }));
 
-        // Sort alphabetically
-        districtNames.sort();
+        // Remove duplicates (in case there are any districts with the same code)
+        const uniqueDistricts = districtData.reduce((unique, district) => {
+            const exists = unique.find(item => item.code === district.code);
+            if (!exists) {
+                unique.push(district);
+            }
+            return unique;
+        }, []);
+
+        // Sort alphabetically by district name
+        uniqueDistricts.sort((a, b) => a.name.localeCompare(b.name));
 
         res.json({
             status: 'success',
-            data: districtNames
+            data: uniqueDistricts
         });
     } catch (error) {
         console.error('Error fetching districts:', error);
