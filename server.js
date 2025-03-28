@@ -98,6 +98,8 @@ const automationRoutes = require('./routes/automation-routes');
 const districtsRoutes = require('./routes/districtRoutes')
 const villageRoutes = require('./routes/villageRoutes')
 const path = require('path');
+const Deed = require('./models/deedSchema');
+const fixDeedData = require('./routes/cleanupDeedData')
 
 // Load environment variables from .env file
 dotenv.config();
@@ -108,7 +110,9 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+app.use(cors({
+    origin : '*'
+}));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -134,6 +138,21 @@ app.use('/api/deeds', deedRoutes);
 app.use('/api/automation', automationRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api', propertyRoutes);
+
+app.get('/test/deed' , async(req,res)=>{
+    try {
+        const response = await Deed.findOne({ documentNumber: "23522352"})
+        console.log("Deed find" , response)
+
+        res.json(response)
+    } catch (error) {
+        console.log("error" ,  error)
+        console.log("errorMessage" , error.message)
+        
+    }
+})
+
+app.use('/fixDeedData', fixDeedData)
 
 // Root route
 app.get('/', (req, res) => {
