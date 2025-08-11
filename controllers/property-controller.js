@@ -2,7 +2,7 @@
 const axios = require('axios');
 const PropertyRecord = require('../models/PropertyRecordSchema');
 const { extractPropertyData } = require('../utils/extractPropertyData');
-
+const ReceiptNumber = require('../models/ReceiptNumberSchema')
 
 // exports.fetchPropertyData = async (req, res) => {
 //     try {
@@ -140,6 +140,163 @@ const { extractPropertyData } = require('../utils/extractPropertyData');
 
 // Get all property records with optional filtering
 
+// exports.fetchPropertyData = async (req, res) => {
+//     try {
+//         const { districtCode, sroCode, propertyId, propNEWAddress, gaonCode1 } = req.body;
+
+//         // Validate required fields
+//         if (!districtCode || !sroCode || !gaonCode1) {
+//             return res.status(400).json({
+//                 success: false,
+//                 message: "Missing required fields: districtCode, sroCode, and gaonCode1 are mandatory"
+//             });
+//         }
+
+//         // Generate a unique search key
+//         // const searchKey = `${districtCode}-${sroCode}-${propertyId || ''}-${propNEWAddress || '1'}-${gaonCode1}`;
+//         const searchKey = `${districtCode}-${sroCode}-${propertyId || ''}-${propNEWAddress || '1'}-${gaonCode1}`;
+
+//         // Check if we already have this data in the database and it's recent (within 24 hours)
+//         const existingRecord = await PropertyRecord.findOne({ searchKey });
+//         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+//         if (existingRecord && existingRecord.updatedAt > oneDayAgo) {
+//             return res.status(200).json({
+//                 message: "Property data retrieved from database",
+//                 totalRecords: existingRecord.recordCount,
+//                 searchId: existingRecord._id,
+//                 data: existingRecord,
+//                 fromCache: true
+//             });
+//         }
+
+//         // Prepare the form data for the external API request
+//         const formData = new URLSearchParams();
+//         formData.append('districtCode', districtCode.trim());
+//         formData.append('sroCode', sroCode.trim());
+//         formData.append('propertyId', (propertyId || '').trim());
+//         formData.append('propNEWAddress', (propNEWAddress || '1').trim());
+//         formData.append('gaonCode1', gaonCode1.trim());
+//         formData.append('action:getPropertyDeedSearchDetail', 'सम्पत्ति विलेख विवरण(Property Deed)');
+
+//         // External API URL
+//         const url = "https://igrsup.gov.in/igrsup/newPropertySearchAction";
+
+//         // Make the HTTP request to external API
+//         console.log(`Making request to ${url} with parameters: ${formData.toString()}`);
+
+//         const response = await axios.post(url, formData, {
+//             headers: {
+//                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+//                 'Content-Type': 'application/x-www-form-urlencoded',
+//                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+//                 'Origin': 'https://igrsup.gov.in',
+//                 'Referer': 'https://igrsup.gov.in/igrsup/newPropertySearchAction',
+//                 'Cache-Control': 'no-cache',
+//                 'Pragma': 'no-cache'
+//             },
+//             maxRedirects: 5,
+//         });
+
+//         if (response.status !== 200) {
+//             console.error(`Error: API returned status code ${response.status}`);
+//             return res.status(response.status).json({
+//                 success: false,
+//                 message: `External API returned status code ${response.status}`
+//             });
+//         }
+
+//         // Get HTML content
+//         const htmlContent = response.data;
+
+//         // Extract property data from HTML
+//         const propertyRecords = extractPropertyData(htmlContent);
+//         console.log("Data After Parse", propertyRecords.length, propertyRecords);
+
+//         // Ensure each record has all the necessary details fields populated
+//         const enhancedRecords = propertyRecords.map(record => {
+//             // Create a unique ID for each record
+//             let recordUniqueId = null;
+//             if (record.details && record.details.regno && record.details.regyear) {
+//                 recordUniqueId = `${record.details.dcode || districtCode}-${record.details.srocode || sroCode}-${record.details.regno}-${record.details.regyear}`;
+//             }
+
+//             // Make sure all details are preserved
+//             const enhancedRecord = {
+//                 ...record,
+//                 recordUniqueId,
+//                 details: {
+//                     ...record.details,
+//                     // Ensure these values are explicitly set
+//                     recieptNo: record.details.recieptNo || '',
+//                     pcode: record.details.pcode || '',
+//                     subDeedCode: record.details.subDeedCode || ''
+//                 }
+//             };
+
+//             return enhancedRecord;
+//         });
+
+//         // Log enhanced records to verify all fields are present
+//         console.log("Enhanced records sample:",
+//             enhancedRecords.length > 0 ?
+//                 JSON.stringify(enhancedRecords[0].details, null, 2) :
+//                 "No records found");
+
+//         // Find or create a record with the given search parameters
+//         let result = await PropertyRecord.findOneAndUpdate(
+//             { searchKey },
+//             {
+//                 districtCode: districtCode.trim(),
+//                 sroCode: sroCode.trim(),
+//                 propertyId: (propertyId || '').trim(),
+//                 propNEWAddress: (propNEWAddress || '1').trim(),
+//                 gaonCode1: gaonCode1.trim(),
+//                 searchKey,
+//                 propertyRecords: enhancedRecords,
+//                 recordCount: enhancedRecords.length,
+//                 lastFetchedAt: new Date(),
+//                 updatedAt: new Date()
+//             },
+//             {
+//                 new: true,            // Return the updated document
+//                 upsert: true,         // Create if not exists
+//                 runValidators: true   // Ensure data meets schema requirements
+//             }
+//         );
+
+//         // Return success response with data
+//         return res.status(200).json({
+//             success: true,
+//             message: "Property data fetched and saved successfully",
+//             totalRecords: enhancedRecords.length,
+//             searchId: result._id,
+//             data: result,
+//             fromCache: false
+//         });
+
+//     } catch (error) {
+//         console.error('Error fetching or saving property data:', error);
+
+//         // Check if it's a MongoDB duplicate key error
+//         if (error.name === 'MongoError' && error.code === 11000) {
+//             return res.status(409).json({
+//                 success: false,
+//                 message: "This property record already exists in the database",
+//                 error: "Duplicate entry"
+//             });
+//         }
+
+//         return res.status(500).json({
+//             success: false,
+//             message: `An error occurred: ${error.message}`,
+//             error: error.toString(),
+//             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+//         });
+//     }
+// };
+
+
 exports.fetchPropertyData = async (req, res) => {
     try {
         const { districtCode, sroCode, propertyId, propNEWAddress, gaonCode1 } = req.body;
@@ -212,12 +369,37 @@ exports.fetchPropertyData = async (req, res) => {
         const propertyRecords = extractPropertyData(htmlContent);
         console.log("Data After Parse", propertyRecords.length, propertyRecords);
 
-        // Ensure each record has all the necessary details fields populated
-        const enhancedRecords = propertyRecords.map(record => {
+        // Get all existing receipt numbers for bulk check
+        const receiptNumbers = propertyRecords
+            .map(record => record.details?.recieptNo)
+            .filter(receiptNo => receiptNo && receiptNo.trim() !== '');
+
+        const existingReceipts = await ReceiptNumber.find({
+            receiptNo: { $in: receiptNumbers }
+        }).select('receiptNo');
+
+        const existingReceiptSet = new Set(existingReceipts.map(r => r.receiptNo));
+
+        console.log(`Found ${existingReceiptSet.size} existing receipt numbers out of ${receiptNumbers.length} total`);
+
+        // Filter and enhance records, skipping those with existing receipt numbers
+        const enhancedRecords = [];
+        const newReceiptNumbers = [];
+        let skippedCount = 0;
+
+        for (const record of propertyRecords) {
             // Create a unique ID for each record
             let recordUniqueId = null;
             if (record.details && record.details.regno && record.details.regyear) {
                 recordUniqueId = `${record.details.dcode || districtCode}-${record.details.srocode || sroCode}-${record.details.regno}-${record.details.regyear}`;
+            }
+
+            // Check if this record has a receipt number and if it already exists
+            const receiptNo = record.details?.recieptNo?.trim();
+            if (receiptNo && existingReceiptSet.has(receiptNo)) {
+                console.log(`Skipping record with existing receipt number: ${receiptNo}`);
+                skippedCount++;
+                continue; // Skip this record
             }
 
             // Make sure all details are preserved
@@ -227,14 +409,41 @@ exports.fetchPropertyData = async (req, res) => {
                 details: {
                     ...record.details,
                     // Ensure these values are explicitly set
-                    recieptNo: record.details.recieptNo || '',
+                    recieptNo: receiptNo || '',
                     pcode: record.details.pcode || '',
                     subDeedCode: record.details.subDeedCode || ''
                 }
             };
 
-            return enhancedRecord;
-        });
+            enhancedRecords.push(enhancedRecord);
+
+            // Collect new receipt numbers for bulk insert
+            if (receiptNo) {
+                newReceiptNumbers.push({
+                    receiptNo: receiptNo,
+                    firstEncounteredAt: new Date()
+                });
+            }
+        }
+
+        console.log(`Processed ${propertyRecords.length} records, kept ${enhancedRecords.length}, skipped ${skippedCount} with existing receipt numbers`);
+
+        // Bulk insert new receipt numbers (ignore duplicates that might occur due to race conditions)
+        if (newReceiptNumbers.length > 0) {
+            try {
+                await ReceiptNumber.insertMany(newReceiptNumbers, { ordered: false });
+                console.log(`Inserted ${newReceiptNumbers.length} new receipt numbers`);
+            } catch (error) {
+                // Handle duplicate key errors gracefully
+                if (error.name === 'BulkWriteError' && error.code === 11000) {
+                    const insertedCount = error.result.insertedCount;
+                    console.log(`Inserted ${insertedCount} new receipt numbers (some duplicates were skipped)`);
+                } else {
+                    console.error('Error inserting receipt numbers:', error);
+                    // Don't fail the entire operation, just log the error
+                }
+            }
+        }
 
         // Log enhanced records to verify all fields are present
         console.log("Enhanced records sample:",
@@ -269,6 +478,7 @@ exports.fetchPropertyData = async (req, res) => {
             success: true,
             message: "Property data fetched and saved successfully",
             totalRecords: enhancedRecords.length,
+            skippedRecords: skippedCount,
             searchId: result._id,
             data: result,
             fromCache: false
