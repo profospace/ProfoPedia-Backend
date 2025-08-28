@@ -8,9 +8,9 @@ const ProcessingLog = require('../models/processingLogSchema');
 // Configuration
 const API_URL = `${base_url}/api/deeds/processDeeds`;
 const STATS_URL = `${base_url}/api/deeds/processingStats`;
-const BATCH_SIZE = 10;
-const MAX_BATCHES = 100;
-const DELAY_MS = 2000;
+const BATCH_SIZE = 5;
+const MAX_BATCHES = 5;
+const DELAY_MS = 3000;
 
 // Log file setup
 const logFile = path.join(__dirname, 'automation-log.txt');
