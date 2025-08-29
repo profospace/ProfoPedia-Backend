@@ -39,6 +39,10 @@
             background-color: #f44336;
         }
 
+        .button.auto {
+            background-color: #ff9800;
+        }
+
         .button:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
@@ -55,6 +59,10 @@
 
         .stopped {
             color: blue;
+        }
+
+        .auto-running {
+            color: orange;
         }
 
         .error {
@@ -103,29 +111,47 @@
             border-radius: 4px;
         }
 
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .checkbox-container input {
+            margin-right: 8px;
+        }
+
+        .auto-settings {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
          /* Add these styles to your existing CSS */
-    .running { color: green; }
-    .completed { color: blue; }
-    .failed { color: red; }
-    .stopped { color: orange; }
-    
-    .pagination {
-        margin-top: 15px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-    }
-    
-    .page-info {
-        font-weight: bold;
-        margin: 0 10px;
-    }
-    
-    #logsTable {
-        width: 100%;
-        margin-top: 15px;
-    }
+        .running { color: green; }
+        .completed { color: blue; }
+        .failed { color: red; }
+        .stopped { color: orange; }
+        
+        .pagination {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .page-info {
+            font-weight: bold;
+            margin: 0 10px;
+        }
+        
+        #logsTable {
+            width: 100%;
+            margin-top: 15px;
+        }
     </style>
 </head>
 
@@ -147,7 +173,22 @@
             <button id="startCustomBtn" class="button">Start from Custom Page</button>
         </div>
 
+        <div class="auto-settings">
+            <div class="checkbox-container">
+                <input type="checkbox" id="autoContinue" />
+                <label for="autoContinue">Auto-Continue: Automatically restart from last page when automation completes</label>
+            </div>
+            
+            <div class="control-row">
+                <label for="autoDelay">Delay before restart (seconds):</label>
+                <input type="number" id="autoDelay" min="1" max="300" value="5" style="width: 60px; margin: 0 10px;">
+                <button id="startAutoBtn" class="button auto">Start Auto-Continue Mode</button>
+                <button id="stopAutoBtn" class="button stop" disabled>Stop Auto-Continue</button>
+            </div>
+        </div>
+
         <div class="status">Status: <span id="status" class="stopped">Not Running</span></div>
+        <div class="status" id="autoStatus" style="display: none;">Auto-Continue: <span id="autoStatusText" class="stopped">Inactive</span></div>
         <div id="startTime"></div>
         <div id="lastPage"></div>
         <div id="errorMsg" class="error"></div>
@@ -225,6 +266,14 @@
         const logEl = document.getElementById('log');
         const startPageInput = document.getElementById('startPage');
 
+        // Auto-continue elements
+        const autoContinueCheckbox = document.getElementById('autoContinue');
+        const autoDelayInput = document.getElementById('autoDelay');
+        const startAutoBtn = document.getElementById('startAutoBtn');
+        const stopAutoBtn = document.getElementById('stopAutoBtn');
+        const autoStatusEl = document.getElementById('autoStatus');
+        const autoStatusTextEl = document.getElementById('autoStatusText');
+
         // Stats elements
         const totalRecordsEl = document.getElementById('totalRecords');
         const totalProcessedEl = document.getElementById('totalProcessed');
@@ -239,7 +288,10 @@
         // API endpoints
         const API_BASE = '/api/automation';
 
-        // Last processed page from server
+        // Auto-continue state
+        let autoModeActive = false;
+        let autoRestartTimeout = null;
+        let lastKnownRunningState = false;
         let serverLastPage = -1;
 
         // Update status from the server
@@ -251,6 +303,17 @@
                 if (data.success) {
                     // Store last page from server
                     serverLastPage = data.lastProcessedPage;
+
+                    // Check if automation just stopped (was running, now not running)
+                    const wasRunning = lastKnownRunningState;
+                    const isNowRunning = data.isRunning;
+                    
+                    if (wasRunning && !isNowRunning && autoModeActive) {
+                        // Automation just completed, schedule auto-restart
+                        scheduleAutoRestart();
+                    }
+                    
+                    lastKnownRunningState = isNowRunning;
 
                     // Update status
                     if (data.isRunning) {
@@ -268,9 +331,9 @@
                     } else {
                         statusEl.textContent = 'Not Running';
                         statusEl.className = 'stopped';
-                        startBtn.disabled = false;
-                        continueBtn.disabled = serverLastPage < 0;
-                        startCustomBtn.disabled = false;
+                        startBtn.disabled = autoModeActive;
+                        continueBtn.disabled = (serverLastPage < 0) || autoModeActive;
+                        startCustomBtn.disabled = autoModeActive;
                         stopBtn.disabled = true;
 
                         if (data.startedAt) {
@@ -313,6 +376,71 @@
             }
         }
 
+        // Schedule auto-restart after delay
+        function scheduleAutoRestart() {
+            if (!autoModeActive) return;
+            
+            const delay = parseInt(autoDelayInput.value) || 5;
+            appendToLog(`Automation completed. Auto-restarting in ${delay} seconds...`);
+            
+            // Clear any existing timeout
+            if (autoRestartTimeout) {
+                clearTimeout(autoRestartTimeout);
+            }
+            
+            autoRestartTimeout = setTimeout(async () => {
+                if (autoModeActive && serverLastPage >= 0) {
+                    appendToLog('Auto-restarting automation from last processed page...');
+                    await continueAutomation();
+                }
+            }, delay * 1000);
+        }
+
+        // Start auto-continue mode
+        function startAutoMode() {
+            autoModeActive = true;
+            autoStatusEl.style.display = 'block';
+            autoStatusTextEl.textContent = 'Active';
+            autoStatusTextEl.className = 'auto-running';
+            
+            startAutoBtn.disabled = true;
+            stopAutoBtn.disabled = false;
+            autoContinueCheckbox.disabled = true;
+            autoDelayInput.disabled = true;
+            
+            // Disable manual controls
+            startBtn.disabled = true;
+            continueBtn.disabled = true;
+            startCustomBtn.disabled = true;
+            
+            appendToLog('Auto-continue mode activated');
+            
+            // Start the first automation run
+            continueAutomation();
+        }
+
+        // Stop auto-continue mode
+        function stopAutoMode() {
+            autoModeActive = false;
+            autoStatusEl.style.display = 'none';
+            
+            startAutoBtn.disabled = false;
+            stopAutoBtn.disabled = true;
+            autoContinueCheckbox.disabled = false;
+            autoDelayInput.disabled = false;
+            
+            // Clear any pending restart
+            if (autoRestartTimeout) {
+                clearTimeout(autoRestartTimeout);
+                autoRestartTimeout = null;
+            }
+            
+            // Re-enable manual controls (if automation is not running)
+            updateStatus();
+            
+            appendToLog('Auto-continue mode deactivated');
+        }
+
         // Start automation from the beginning (page 0)
         async function startAutomation() {
             try {
@@ -340,15 +468,19 @@
                     startStatusPolling();
                 } else {
                     appendToLog('Failed to start automation: ' + (data.message || 'Unknown error'));
+                    if (!autoModeActive) {
+                        startBtn.disabled = false;
+                        continueBtn.disabled = false;
+                        startCustomBtn.disabled = false;
+                    }
+                }
+            } catch (error) {
+                appendToLog('Error starting automation: ' + error.message);
+                if (!autoModeActive) {
                     startBtn.disabled = false;
                     continueBtn.disabled = false;
                     startCustomBtn.disabled = false;
                 }
-            } catch (error) {
-                appendToLog('Error starting automation: ' + error.message);
-                startBtn.disabled = false;
-                continueBtn.disabled = false;
-                startCustomBtn.disabled = false;
             }
         }
 
@@ -386,15 +518,19 @@
                     startStatusPolling();
                 } else {
                     appendToLog('Failed to continue automation: ' + (data.message || 'Unknown error'));
+                    if (!autoModeActive) {
+                        startBtn.disabled = false;
+                        continueBtn.disabled = false;
+                        startCustomBtn.disabled = false;
+                    }
+                }
+            } catch (error) {
+                appendToLog('Error continuing automation: ' + error.message);
+                if (!autoModeActive) {
                     startBtn.disabled = false;
                     continueBtn.disabled = false;
                     startCustomBtn.disabled = false;
                 }
-            } catch (error) {
-                appendToLog('Error continuing automation: ' + error.message);
-                startBtn.disabled = false;
-                continueBtn.disabled = false;
-                startCustomBtn.disabled = false;
             }
         }
 
@@ -489,7 +625,6 @@
             pollingInterval = setInterval(updateStatus, 5000);
         }
 
-
         // Logs pagination state
         let logsCurrentPage = 1;
         let logsTotalPages = 1;
@@ -572,24 +707,24 @@
             logsPagination.appendChild(nextBtn);
         }
 
-        // Add fetch logs to the refresh button
-        refreshBtn.addEventListener('click', () => {
-            updateStatus();
-            fetchProcessingLogs();
-        });
-
-        // Initial logs fetch
-        fetchProcessingLogs();
-
         // Event listeners
         startBtn.addEventListener('click', startAutomation);
         continueBtn.addEventListener('click', continueAutomation);
         startCustomBtn.addEventListener('click', startFromCustomPage);
         stopBtn.addEventListener('click', stopAutomation);
-        refreshBtn.addEventListener('click', updateStatus);
+        refreshBtn.addEventListener('click', () => {
+            updateStatus();
+            fetchProcessingLogs();
+        });
 
-        // Initial status update
+        // Auto-continue event listeners
+        startAutoBtn.addEventListener('click', startAutoMode);
+        stopAutoBtn.addEventListener('click', stopAutoMode);
+
+        // Initial loads
         updateStatus();
+        fetchProcessingLogs();
+        startStatusPolling();
     </script>
 </body>
 
