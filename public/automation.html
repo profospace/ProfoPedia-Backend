@@ -129,12 +129,23 @@
             margin-top: 15px;
         }
 
-         /* Add these styles to your existing CSS */
-        .running { color: green; }
-        .completed { color: blue; }
-        .failed { color: red; }
-        .stopped { color: orange; }
-        
+        /* Add these styles to your existing CSS */
+        .running {
+            color: green;
+        }
+
+        .completed {
+            color: blue;
+        }
+
+        .failed {
+            color: red;
+        }
+
+        .stopped {
+            color: orange;
+        }
+
         .pagination {
             margin-top: 15px;
             display: flex;
@@ -142,15 +153,31 @@
             justify-content: center;
             gap: 10px;
         }
-        
+
         .page-info {
             font-weight: bold;
             margin: 0 10px;
         }
-        
+
         #logsTable {
             width: 100%;
             margin-top: 15px;
+        }
+
+        .auto-continue-indicator {
+            color: #ff9800;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 8px;
         }
     </style>
 </head>
@@ -160,6 +187,11 @@
 
     <div class="card">
         <h2>Controls</h2>
+        <div class="checkbox-container">
+            <input type="checkbox" id="autoContinueCheckbox" checked>
+            <label for="autoContinueCheckbox">Auto-continue processing when automation stops</label>
+        </div>
+
         <div class="control-row">
             <button id="startBtn" class="button">Start from Beginning</button>
             <button id="continueBtn" class="button">Continue from Last Page</button>
@@ -187,8 +219,11 @@
             </div>
         </div>
 
-        <div class="status">Status: <span id="status" class="stopped">Not Running</span></div>
-        <div class="status" id="autoStatus" style="display: none;">Auto-Continue: <span id="autoStatusText" class="stopped">Inactive</span></div>
+        <div class="status">
+            Status: <span id="status" class="stopped">Not Running</span>
+            <span id="autoContinueIndicator" class="auto-continue-indicator"
+                style="display: none;">Auto-continuing...</span>
+        </div>
         <div id="startTime"></div>
         <div id="lastPage"></div>
         <div id="errorMsg" class="error"></div>
@@ -265,14 +300,8 @@
         const errorMsgEl = document.getElementById('errorMsg');
         const logEl = document.getElementById('log');
         const startPageInput = document.getElementById('startPage');
-
-        // Auto-continue elements
-        const autoContinueCheckbox = document.getElementById('autoContinue');
-        const autoDelayInput = document.getElementById('autoDelay');
-        const startAutoBtn = document.getElementById('startAutoBtn');
-        const stopAutoBtn = document.getElementById('stopAutoBtn');
-        const autoStatusEl = document.getElementById('autoStatus');
-        const autoStatusTextEl = document.getElementById('autoStatusText');
+        const autoContinueCheckbox = document.getElementById('autoContinueCheckbox');
+        const autoContinueIndicator = document.getElementById('autoContinueIndicator');
 
         // Stats elements
         const totalRecordsEl = document.getElementById('totalRecords');
@@ -294,6 +323,15 @@
         let lastKnownRunningState = false;
         let serverLastPage = -1;
 
+        // Track previous running state to detect state changes
+        let previousIsRunning = false;
+
+        // Flag to prevent auto-continue when user manually stops
+        let userManuallyStopped = false;
+
+        // Auto-continue timeout
+        let autoContinueTimeout = null;
+
         // Update status from the server
         async function updateStatus() {
             try {
@@ -304,16 +342,13 @@
                     // Store last page from server
                     serverLastPage = data.lastProcessedPage;
 
-                    // Check if automation just stopped (was running, now not running)
-                    const wasRunning = lastKnownRunningState;
-                    const isNowRunning = data.isRunning;
-                    
-                    if (wasRunning && !isNowRunning && autoModeActive) {
-                        // Automation just completed, schedule auto-restart
-                        scheduleAutoRestart();
-                    }
-                    
-                    lastKnownRunningState = isNowRunning;
+                    // Check for state change from running to not running
+                    const currentIsRunning = data.isRunning;
+                    const stateChanged = previousIsRunning !== currentIsRunning;
+                    const justStopped = previousIsRunning && !currentIsRunning;
+
+                    // Update previous state
+                    previousIsRunning = currentIsRunning;
 
                     // Update status
                     if (data.isRunning) {
@@ -323,6 +358,13 @@
                         continueBtn.disabled = true;
                         startCustomBtn.disabled = true;
                         stopBtn.disabled = false;
+
+                        // Clear any pending auto-continue
+                        if (autoContinueTimeout) {
+                            clearTimeout(autoContinueTimeout);
+                            autoContinueTimeout = null;
+                        }
+                        autoContinueIndicator.style.display = 'none';
 
                         if (data.startedAt) {
                             const startDate = new Date(data.startedAt);
@@ -342,6 +384,24 @@
                         } else {
                             startTimeEl.textContent = '';
                         }
+
+                        // Handle auto-continue logic
+                        if (justStopped && stateChanged && autoContinueCheckbox.checked && !userManuallyStopped && serverLastPage >= 0) {
+                            appendToLog('Automation stopped. Auto-continue is enabled, will restart in 3 seconds...');
+                            autoContinueIndicator.style.display = 'inline';
+
+                            // Wait 3 seconds before auto-continuing
+                            autoContinueTimeout = setTimeout(() => {
+                                appendToLog('Auto-continuing from last processed page...');
+                                continueAutomation();
+                                autoContinueIndicator.style.display = 'none';
+                            }, 3000);
+                        }
+                    }
+
+                    // Reset manual stop flag when automation starts again
+                    if (data.isRunning) {
+                        userManuallyStopped = false;
                     }
 
                     // Update last page info
@@ -583,6 +643,15 @@
         async function stopAutomation() {
             try {
                 stopBtn.disabled = true;
+                userManuallyStopped = true; // Set flag to prevent auto-continue
+
+                // Clear any pending auto-continue
+                if (autoContinueTimeout) {
+                    clearTimeout(autoContinueTimeout);
+                    autoContinueTimeout = null;
+                }
+                autoContinueIndicator.style.display = 'none';
+
                 appendToLog('Stopping automation...');
 
                 const response = await fetch(`${API_BASE}/stop`, {
