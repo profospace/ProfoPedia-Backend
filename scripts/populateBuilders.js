@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const { builderRegex } = require('../builderRegex');
 
-dotenv.config(); // Load .env first
+dotenv.config(); // Load .env 
 
 const MONGO_URI ='mongodb://127.0.0.1:27017/Kanpur?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.5.8';
 
@@ -26,8 +27,11 @@ mongoose.connect(MONGO_URI, {
 const Deed = mongoose.model('Deed', new mongoose.Schema({}, { strict: false }));
 const Builder = mongoose.model('Builder', new mongoose.Schema({}, { strict: false }));
 
-// Regex for builder/company names in Hindi
-const builderRegex = /(बिल्डर|प्रॉपर्टी|कंस्ट्रक्शन|डिवेलपर्स|लिमिटेड|इन्फ्रा|कंपनी)/i;
+// // Regex for builder/company names in Hindi
+// const builderRegex = '/(बिल्डर|प्रॉपर्टी|कंस्ट्रक्शन|डिवेलपर्स|लिमिटेड|इन्फ्रा|कंपनी|हाउसिंग|एस्टेट|रियल एस्टेट|हाइट्स|टॉवर्स|विला|सिटी|प्लाजा|स्क्वायर|गार्डन|एन्टरप्राइज|प्रोजेक्ट्स|कॉर्पोरेशन|इंडस्ट्रीज|ग्रुप|इन्फ्रास्ट्रक्चर|प्राइवेट|प्लॉट|एसेट)/i';
+
+// const builderRegex = /(बिल्डर|प्रॉपर्टी|कंस्ट्रक्शन|डिवेलपर्स|लिमिटेड|इन्फ्रा|कंपनी|हाउसिंग|एस्टेट|रियल एस्टेट|हाइट्स|टॉवर्स|विला|सिटी|प्लाजा|स्क्वायर|गार्डन|एन्टरप्राइज|प्रोजेक्ट्स|कॉर्पोरेशन|इंडस्ट्रीज|ग्रुप|इन्फ्रास्ट्रक्चर|प्राइवेट|प्लॉट|एसेट)/i;
+
 
 async function populateBuilders() {
     try {
