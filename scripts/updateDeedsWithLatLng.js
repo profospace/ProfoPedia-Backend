@@ -372,18 +372,105 @@
  * from the Locality collection based on their `locality` field.
  */
 
+// const mongoose = require('mongoose');
+// // const Deed = require('../models/deedSchema');
+// const Deed = mongoose.model('Deed', new mongoose.Schema({}, { strict: false }));
+// const Locality = mongoose.model('locality', new mongoose.Schema({}, { strict: false }));
+
+// // const Locality = require('../models/locality');
+
+// // Replace with your MongoDB URI (local or Atlas)
+// const MONGO_URI = 'mongodb://127.0.0.1:27017/DeedDistricts?directConnection=true&serverSelectionTimeoutMS=30000';
+
+// // Remove this line or set it to true
+// // mongoose.set('bufferCommands', false);
+
+// (async () => {
+//   try {
+//     console.log('🚀 Connecting to MongoDB...');
+//     await mongoose.connect(MONGO_URI, {
+//       useNewUrlParser: true,
+//       useUnifiedTopology: true,
+//       serverSelectionTimeoutMS: 30000,
+//     });
+    
+//     // Wait for connection to be fully ready
+//     await new Promise(resolve => {
+//       if (mongoose.connection.readyState === 1) {
+//         resolve();
+//       } else {
+//         mongoose.connection.once('open', resolve);
+//       }
+//     });
+    
+//     console.log('✅ Connected successfully.');
+
+//     // Count total deeds with a non-empty locality
+//     const totalDeeds = await Deed.countDocuments({ locality: { $exists: true, $ne: '' } });
+//     console.log(`📜 Total deeds with locality: ${totalDeeds}`);
+
+//     // Cursor to iterate deeds one by one (memory-efficient)
+//     const cursor = Deed.find({ locality: { $exists: true, $ne: '' } }).lean().cursor();
+
+//     let processedCount = 0;
+//     let updatedCount = 0;
+//     let missingCount = 0;
+
+//     for (let deed = await cursor.next(); deed != null; deed = await cursor.next()) {
+//       processedCount++;
+//       const localityName = deed.locality.trim();
+
+//       // Search for locality in Locality collection (case-insensitive)
+//       const locality = await Locality.findOne({
+//         name: { $regex: `^${localityName}$`, $options: 'i' }
+//       });
+
+//       if (locality && locality.lat && locality.lng) {
+//         await Deed.updateOne(
+//           { _id: deed._id },
+//           {
+//             $set: {
+//               lat: locality.lat,
+//               lng: locality.lng,
+//               pincode: locality.pincode || null,
+//               updatedAt: new Date()
+//             }
+//           }
+//         );
+//         updatedCount++;
+//         console.log(`✅ [${processedCount}/${totalDeeds}] Updated deed ID ${deed._id} → "${localityName}"`);
+//       } else {
+//         missingCount++;
+//         console.warn(`⚠️ [${processedCount}/${totalDeeds}] Locality not found for deed ID ${deed._id}: "${localityName}"`);
+//       }
+
+//       // Log progress every 50 deeds
+//       if (processedCount % 50 === 0) {
+//         console.log(`📊 Progress: ${processedCount} processed, ${updatedCount} updated, ${missingCount} missing`);
+//       }
+//     }
+
+//     console.log('--------------------------------------------------');
+//     console.log(`✅ Total deeds processed: ${processedCount}`);
+//     console.log(`✅ Total updated deeds: ${updatedCount}`);
+//     console.log(`⚠️  Localities not found: ${missingCount}`);
+//     console.log('--------------------------------------------------');
+
+//     await mongoose.connection.close();
+//     console.log('🛑 Connection closed.');
+//   } catch (error) {
+//     console.error('❌ Error:', error);
+//     process.exit(1);
+//   }
+// })();
+
+
 const mongoose = require('mongoose');
-// const Deed = require('../models/deedSchema');
-const Deed = mongoose.model('Deed', new mongoose.Schema({}, { strict: false }));
+
+const Deed = mongoose.model('deeds164', new mongoose.Schema({}, { strict: false }), 'deeds164');
 const Locality = mongoose.model('locality', new mongoose.Schema({}, { strict: false }));
 
-// const Locality = require('../models/locality');
-
-// Replace with your MongoDB URI (local or Atlas)
-const MONGO_URI = 'mongodb://127.0.0.1:27017/Kanpur?directConnection=true&serverSelectionTimeoutMS=30000';
-
-// Remove this line or set it to true
-// mongoose.set('bufferCommands', false);
+const MONGO_URI = 'mongodb://127.0.0.1:27017/DeedDistricts?directConnection=true&serverSelectionTimeoutMS=30000';
 
 (async () => {
   try {
@@ -393,23 +480,17 @@ const MONGO_URI = 'mongodb://127.0.0.1:27017/Kanpur?directConnection=true&server
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 30000,
     });
-    
-    // Wait for connection to be fully ready
+
     await new Promise(resolve => {
-      if (mongoose.connection.readyState === 1) {
-        resolve();
-      } else {
-        mongoose.connection.once('open', resolve);
-      }
+      if (mongoose.connection.readyState === 1) resolve();
+      else mongoose.connection.once('open', resolve);
     });
-    
+
     console.log('✅ Connected successfully.');
 
-    // Count total deeds with a non-empty locality
     const totalDeeds = await Deed.countDocuments({ locality: { $exists: true, $ne: '' } });
     console.log(`📜 Total deeds with locality: ${totalDeeds}`);
 
-    // Cursor to iterate deeds one by one (memory-efficient)
     const cursor = Deed.find({ locality: { $exists: true, $ne: '' } }).lean().cursor();
 
     let processedCount = 0;
@@ -420,7 +501,6 @@ const MONGO_URI = 'mongodb://127.0.0.1:27017/Kanpur?directConnection=true&server
       processedCount++;
       const localityName = deed.locality.trim();
 
-      // Search for locality in Locality collection (case-insensitive)
       const locality = await Locality.findOne({
         name: { $regex: `^${localityName}$`, $options: 'i' }
       });
@@ -444,7 +524,6 @@ const MONGO_URI = 'mongodb://127.0.0.1:27017/Kanpur?directConnection=true&server
         console.warn(`⚠️ [${processedCount}/${totalDeeds}] Locality not found for deed ID ${deed._id}: "${localityName}"`);
       }
 
-      // Log progress every 50 deeds
       if (processedCount % 50 === 0) {
         console.log(`📊 Progress: ${processedCount} processed, ${updatedCount} updated, ${missingCount} missing`);
       }
@@ -463,3 +542,4 @@ const MONGO_URI = 'mongodb://127.0.0.1:27017/Kanpur?directConnection=true&server
     process.exit(1);
   }
 })();
+
