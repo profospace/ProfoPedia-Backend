@@ -234,6 +234,16 @@ router.get('/get-all-deeds', async (req, res) => {
         if (req.query.ward) {
             query.ward = req.query.ward;
         }
+
+         // 🔹 New filter: by builder
+        if (req.query.builder) {
+            const builderRegex = new RegExp(req.query.builder, 'i'); // case-insensitive
+            query.$or = query.$or || [];
+            query.$or.push(
+                { 'firstParty.name': { $regex: builderRegex } },
+                { 'secondParty.name': { $regex: builderRegex } }
+            );
+        }
         
 
         // Execute query with pagination

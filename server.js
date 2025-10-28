@@ -100,6 +100,9 @@ const villageRoutes = require('./routes/villageRoutes')
 const path = require('path');
 const Deed = require('./models/deedSchema');
 const fixDeedData = require('./routes/cleanupDeedData')
+const localityRoutes = require('./routes/locality.js');
+const builderRoutes = require('./routes/builderRoutes.js');
+
 
 // Load environment variables from .env file
 dotenv.config();
@@ -107,9 +110,14 @@ dotenv.config();
 // Create Express app
 const app = express();
 
+
+// MongoDB URI
+const MONGO_URI = process.env.MONGO_URI_DB1;
 app.use(cors({
     origin : '*'
 }));
+
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -131,6 +139,8 @@ app.get('/village', (req, res) => {
 });
 
 // Routes
+app.use("/api/builders", builderRoutes);
+app.use("/api/localities", localityRoutes);
 app.use('/district', districtsRoutes);
 app.use('/village', villageRoutes);
 app.use('/deeds', propertyDetailsRoutes);
@@ -160,7 +170,25 @@ app.get('/', (req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+// const PORT = process.env.PORT || 8000;
+// app.listen(PORT, () => {
+//     console.log(`Server running on port ${PORT}`);
+// });
+
+// Connect to MongoDB
+mongoose.connect(MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
+.then(() => {
+    console.log("✅ Connected to MongoDB");
+
+    // Start the server only after DB connection
+    const PORT = process.env.PORT || 8000;
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+})
+.catch(err => {
+    console.error("❌ MongoDB connection error:", err);
 });

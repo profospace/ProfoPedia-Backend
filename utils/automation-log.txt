@@ -1,24 +1,26 @@
-=== BATCH PROCESSING STARTED AT 2025-08-29T00:16:56.801Z ===
-[2025-08-29T00:16:56.867Z] Starting batch processing of property deeds...
-[2025-08-29T00:16:56.868Z] Batch size: 2
-[2025-08-29T00:16:56.869Z] Starting from page: 661
-[2025-08-29T00:16:56.869Z] API URL: http://localhost:8000/api/deeds/processDeeds
-[2025-08-29T00:16:56.870Z] Processing batch 661...
-=== BATCH PROCESSING STARTED AT 2025-08-20T13:17:11.675Z ===
-[2025-08-20T13:17:11.846Z] Starting batch processing of property deeds...
-[2025-08-20T13:17:11.847Z] Batch size: 5
-[2025-08-20T13:17:11.847Z] Starting from page: 197
-[2025-08-20T13:17:11.848Z] API URL: http://localhost:8000/api/deeds/processDeeds
-[2025-08-20T13:17:11.848Z] Processing batch 197...
-[2025-08-20T13:17:14.392Z] Batch 197 processed. Success: 41, Failed: 10
-[2025-08-20T13:17:14.461Z] Next batch: 198
-[2025-08-20T13:17:17.461Z] Processing batch 198...
-[2025-08-20T13:17:20.049Z] Batch 198 processed. Success: 71, Failed: 6
-[2025-08-20T13:17:20.132Z] Next batch: 199
-[2025-08-20T13:17:23.146Z] Processing batch 199...
-[2025-08-20T13:17:26.558Z] Batch 199 processed. Success: 71, Failed: 29
-[2025-08-20T13:17:26.624Z] Next batch: 200
-[2025-08-20T13:17:29.634Z] Processing batch 200...
-[2025-08-20T13:19:08.600Z] Batch 200 processed. Success: 650, Failed: 1645
-[2025-08-20T13:19:08.680Z] Next batch: 201
-[2025-08-20T13:19:11.685Z] Processing batch 201...
+=== BATCH PROCESSING STARTED AT 2025-10-17T16:16:40.210Z ===
+[2025-10-17T16:16:40.213Z] Starting batch processing of property deeds...
+[2025-10-17T16:16:40.213Z] Batch size: 2
+[2025-10-17T16:16:40.214Z] Starting from page: 22
+[2025-10-17T16:16:40.214Z] API URL: http://localhost:8000/api/deeds/processDeeds
+[2025-10-17T16:16:40.214Z] Processing batch 22...
+[2025-10-17T16:17:48.755Z] Batch 22 processed. Success: 130, Failed: 71
+[2025-10-17T16:17:48.757Z] Next batch: 23
+[2025-10-17T16:17:49.765Z] Processing batch 23...
+[2025-10-17T16:19:31.043Z] Batch 23 processed. Success: 156, Failed: 105
+[2025-10-17T16:19:31.916Z] Next batch: 24
+[2025-10-17T16:19:32.929Z] Batch processing completed.
+[2025-10-17T16:19:32.930Z] Total batches processed: 2
+[2025-10-17T16:19:33.102Z] Final processing statistics:
+[2025-10-17T16:19:33.103Z] {
+  "totalRecords": 2992,
+  "totalPropertyItems": 118260,
+  "totalProcessed": 117068,
+  "successfulDeeds": 0,
+  "failedDeeds": 117068,
+  "notProcessedDeeds": 1192,
+  "recordsWithAtLeastOneProcessed": 1800,
+  "failedDeedsCount": 6051,
+  "remainingToProcess": 1192
+}
+[2025-10-17T16:19:33.106Z] === BATCH PROCESSING FINISHED AT 2025-10-17T16:19:33.106Z ===

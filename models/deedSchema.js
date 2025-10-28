@@ -291,6 +291,7 @@
 
 const mongoose = require('mongoose');
 const { db2 } = require('../database/db');
+const { builderRegex } = require('../builderRegex');
 
 // Define the schema for a party (seller, buyer, or witness)
 const partySchema = new mongoose.Schema({
@@ -487,6 +488,22 @@ const deedSchema = new mongoose.Schema({
         unique: true,
         index: true
     },
+    lat: {
+    type: Number,
+    default: null,
+    index: true
+},
+lng: {
+    type: Number,
+    default: null,
+    index: true
+},
+pincode: {
+    type: String,
+    trim: true,
+    index: true
+},
+
 
     // Meta Information
     createdAt: {
@@ -532,6 +549,32 @@ deedSchema.pre('save', function (next) {
     this.updatedAt = new Date();
 
     next();
+});
+
+// 3️⃣ Middleware on Deed Schema
+deedSchema.pre('save', async function (next) {
+    try {
+        const deed = this;
+
+        // Collect all parties
+        const parties = [...deed.firstParty, ...deed.secondParty];
+
+        for (const party of parties) {
+            if (party.name && builderRegex.test(party.name)) {
+                // Check if builder already exists
+                const exists = await Builder.findOne({ name: party.name });
+                if (!exists) {
+                    // Save new builder
+                    await Builder.create({ name: party.name });
+                    console.log(`New builder added: ${party.name}`);
+                }
+            }
+        }
+
+        next();
+    } catch (err) {
+        next(err);
+    }
 });
 
 /**
