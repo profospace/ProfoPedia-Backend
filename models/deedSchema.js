@@ -622,6 +622,6 @@ function getMonthNumber(monthStr) {
 }
 
 // Create and export the model
-const Deed = db2.model('Deed', deedSchema);
+// const Deed = db2.model('Deed', deedSchema);
 
-module.exports = Deed;
+// module.exports = Deed;
